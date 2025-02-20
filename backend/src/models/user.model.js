@@ -11,7 +11,8 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true
+        required: true,
+        select:false
     },
     role: {
         type: String,
@@ -25,7 +26,7 @@ const userSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    refrralcode: {
+    referralcode: {
         type: String
     }
 

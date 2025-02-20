@@ -4,16 +4,27 @@ import { User } from "../models/user.model.js";
 import { ApiResponse } from  "../utils/ApiResponse.js"
 
 const registerUser = asynchHandler(async (req, res) => {
-    const { name, email, password, refrralcode, mobilenumber } = req.body;
+    const { name, email, password, referralcode, mobilenumber } = req.body;
     try {
         // const validateUser = validateUserInput({ name, email, password, refrralcode, mobilenumber });
         // if(!validateUser){
         //     throw new ApiError(400, "Invalid input");
         // }
-        const user = await User.create({ name, email, password, refrralcode, mobilenumber });
+        // console.log(name);
+        console.log("register user");
+        const user = new User({
+            name,
+            email,
+            password,
+            referralcode,
+            mobilenumber
+        })
+        await user.save();
+        console.log(user);
         res.status(200).json(new ApiResponse(201, { user }, "User registered successfully"));
 
     } catch (error) {
+        console.log(error);
         throw new ApiError(500, "Internal server error");
     }
 });
@@ -32,6 +43,7 @@ const loginUser = asynchHandler(async (req, res) => {
         // const token = user.getSignedJwtToken();
         return res.status(200).json(new ApiResponse(200, { user }, "User logged in successfully"));
     } catch (error) {
+        console.log(error);
         throw new ApiError(500, "Internal server error");
     }
 }
