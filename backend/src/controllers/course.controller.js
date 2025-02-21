@@ -1,18 +1,32 @@
 import { ApiError } from "../utils/ApiError.js";
 import { asynchHandler } from "../utils/AsyncHandler.js";
 import { Course } from "../models/course.model.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 const createCourse = asynchHandler(async (req, res) => {
-    const { title, description, price, duration } = req.body;
+    const { title, description, price, duration, courseMentorName } = req.body;
     try {
-        const course = await Course.create({ title, description, price, duration, courseImageUrl });
+
+        const course = new Course({
+            title,
+            description,
+            price,
+            duration,
+            courseMentorName
+        });
+        await course.save();
+        console.log(course)
+
+
+
         // const validateCourse = validateCourseInput({ title, description, price, duration });
         // if (!validateCourse) {
         //     throw new ApiError(400, "Invalid input");
         // }
         res.status(200).json(new ApiResponse(201, { course }, "Course created successfully"));
     } catch (error) {
-        throw new ApiError(500, "Internal server error");
+        console.log(error);
+        throw new ApiError(500, "Internal server error", error);
     }
 }
 );
@@ -61,7 +75,8 @@ const updateCourse = asynchHandler(async (req, res) => {
         const course = await Course.findByIdAndUpdate(id, req.body, {
             new: true,
             runValidators: true
-        });
+        }
+        );
         if (!course) {
             throw new ApiError(404, "Course not found");
         }
