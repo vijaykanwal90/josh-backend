@@ -3,7 +3,7 @@ import { getUser, updateUser, getUserById } from "../controllers/user.controller
 
 const router = Router();
 
-router.route('/').get(getUser).put(updateUser);
-router.route('/:id').get(getUserById);
+router.route('/').get(getUser)
+router.route('/:id').get(getUserById).patch(updateUser);;
 
 export default router;
