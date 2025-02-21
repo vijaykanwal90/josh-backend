@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-
+import bcrypt from 'bcryptjs';
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -26,13 +26,27 @@ const userSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    // this is referral code entered by the user
     referralcode: {
         type: String
-    }
+    },
+    // one for each user to share
+
+    sharableReferralCode: {
+        type: String
+    },
+
 
 }, {
     timestamps: true
 })
+userSchema.methods.verifyPassword = async function (passwordByUser) {
+    const user = this;
+    const hashedPassword = user.password;
+    const isValid = await bcrypt.compare(passwordByUser, hashedPassword);
+    return isValid;
+    
+}
 
 export const User = mongoose.model('User', userSchema);
 
