@@ -78,10 +78,12 @@ const updateCourse = asynchHandler(async (req, res) => {
         }
         );
         if (!course) {
+
             throw new ApiError(404, "Course not found");
         }
         res.status(200).json(new ApiResponse(200, { course }, "Course updated successfully"));
     } catch (error) {
+        console.log(error);
         throw new ApiError(500, "Internal server error");
     }
 }

@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema({
         ref: 'Course'
     }],
     mobilenumber: {
-        type: Number,
+        type: String,
         required: true
     },
     // this is referral code entered by the user
