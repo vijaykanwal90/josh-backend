@@ -11,15 +11,16 @@ const registerUser = asynchHandler(async (req, res) => {
         //     throw new ApiError(400, "Invalid input");
         // }
         // console.log(name);
+
         console.log("register user");
         const exists = await User.findOne({
             $or:[{email},{mobilenumber}]
         })
         if(exists){
-            if(user.mobilenumber==mobilenumber){
+            if(exists.mobilenumber==mobilenumber){
                 throw new ApiError(400, "Mobile number already exists");
             }
-            else if(user.email==email){
+            else if(exists.email==email){
                 throw new ApiError(400, "Email already exists");
             }
         }
@@ -27,7 +28,7 @@ const registerUser = asynchHandler(async (req, res) => {
         if(referralcode){
 
         
-        const getReferralCode = await User.findOne({    sharableReferralCode: referralcode });
+        const getReferralCode = await User.findOne({   sharableReferralCode: referralcode });
         if(!getReferralCode){
             throw new ApiError(400, "Invalid referral code");
         }
@@ -65,18 +66,31 @@ const loginUser = asynchHandler(async (req, res) => {
         if (!user || !(await user.verifyPassword(password))) {
             throw new ApiError(401, "Invalid credentials");
         }
-        // const token = user.getSignedJwtToken();
-        const token = await user.getJWT();
-        res.cookie("token",token);
+       const token = await user.getJWT();
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
+        });
+
         return res.status(200).json(new ApiResponse(200, { user }, "User logged in successfully"));
+
     } catch (error) {
         console.log(error);
         throw new ApiError(500, "Internal server error");
     }
 }
 );
-const logoutUser = asynchHandler(async (req, res) => {
-    res.clearCookie("token");
-    res.status(200).json(new ApiResponse(200, {}, "User logged out successfully"));
-});
-export { registerUser, loginUser,logoutUser };
+const logoutUser =  (req, res) => {  
+    try {
+        res.clearCookie('token');
+       
+
+        return res.status(200).json(new ApiResponse(200, {}, "User logged out successfully"));
+    } catch (error) {
+        console.log(error);
+        throw new ApiError(500, "Internal server error");
+    }
+}
+
+
+export { registerUser, loginUser, logoutUser };
