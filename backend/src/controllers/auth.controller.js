@@ -1,5 +1,5 @@
 import { ApiError } from "../utils/ApiError.js";
-import { asynchHandler } from "../utils/AsyncHandler.js";
+import { asynchHandler } from "../utils/AsynchHandler.js";
 import { User } from "../models/user.model.js";
 import { ApiResponse } from  "../utils/ApiResponse.js"
 import bcrypt from 'bcryptjs';
@@ -66,6 +66,8 @@ const loginUser = asynchHandler(async (req, res) => {
             throw new ApiError(401, "Invalid credentials");
         }
         // const token = user.getSignedJwtToken();
+        const token = await user.getJWT();
+        res.cookie("token",token);
         return res.status(200).json(new ApiResponse(200, { user }, "User logged in successfully"));
     } catch (error) {
         console.log(error);
@@ -73,5 +75,8 @@ const loginUser = asynchHandler(async (req, res) => {
     }
 }
 );
-
-export { registerUser, loginUser };
+const logoutUser = asynchHandler(async (req, res) => {
+    res.clearCookie("token");
+    res.status(200).json(new ApiResponse(200, {}, "User logged out successfully"));
+});
+export { registerUser, loginUser,logoutUser };

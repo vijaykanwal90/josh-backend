@@ -1,6 +1,6 @@
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
-import { asynchHandler } from "../utils/AsyncHandler.js";
+import { asynchHandler } from "../utils/AsynchHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 const getUser = asynchHandler(async (req, res) => {
