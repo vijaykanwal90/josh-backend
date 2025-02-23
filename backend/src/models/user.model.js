@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { asynchHandler } from '../utils/AsynchHandler.js';
+import jwt from 'jsonwebtoken';
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -47,6 +49,11 @@ userSchema.methods.verifyPassword = async function (passwordByUser) {
     return isValid;
     
 }
+userSchema.methods.getJWT = (async function () {
+    const user = this;
+    const token = await jwt.sign({id: user._id},"JoshGuruPvt@2025");
+    return token;
+})
 
 export const User = mongoose.model('User', userSchema);
 
