@@ -5,24 +5,30 @@ import { uploadCloudinary } from "../utils/Cloudinary.js";
 import { User } from "../models/user.model.js";
 import { Video } from "../models/video.model.js";
 import { Course } from "../models/course.model.js";
+import { populate } from "dotenv";
 
 
 const publishVideo = asynchHandler(async (req, res) => {
     const { title, description, course } = req.body;
 
-    if ([title, description].some((field) => field?.trim() === "")) {
+    // console.log(req)
+    console.log("req.files:", req.files);
+
+    if ([title, description,course].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "All fields are required");
     }
-    const VideoLocalPath = req.files?.videoFile[0]?.path;
-    const thumbnailLocalPath = req.files?.thumbnail[0]?.path;
-    // console.log(thumbnailLocalPath);
-    // console.log(VideoLocalPath)
+    
+    
+    const VideoLocalPath = await req.files?.videoFile[0]?.path;
+    const thumbnailLocalPath = await req.files?.thumbnail[0]?.path;
+    
     if (!VideoLocalPath) {
         throw new ApiError(400, "Video file is missing");
     }
     if (!thumbnailLocalPath) {
         throw new ApiError(400, "thumbnail file is missing");
     }
+    
     const uploadedVideo = await uploadCloudinary(VideoLocalPath);
     const thumbnail = await uploadCloudinary(thumbnailLocalPath);
     if (!uploadedVideo) {
@@ -32,16 +38,15 @@ const publishVideo = asynchHandler(async (req, res) => {
         throw new ApiError(400, "Error while uploading thumbnail to cloudiary");
     }
 
-    const owner = await req.user?._id;;
+    const owner = await req.user?._id;
     const duration = uploadedVideo.duration;
-    const courseName = await Course.findById(course).select("title");
+    const courseName = await Course.findById(course)
     if(!courseName){
         throw new ApiError(404, "Course not found");
     }
-    console.log(courseName);
+   
 
     const video = await Video.create({
-        //databse se baat krne h
         videoFile: uploadedVideo.url,
         thumbnail: thumbnail.url,
         title,
@@ -50,8 +55,11 @@ const publishVideo = asynchHandler(async (req, res) => {
         isPublished: true,
         owner,
         course,
-        courseName: courseName,
+      
     });
+    if (!video) {
+        throw new ApiError(400, "Error while uploading video");
+    }
     return res
         .status(200)
         .json(new ApiResponse(200, video, "User video uploaded"));
@@ -145,6 +153,21 @@ const updateVideo = asynchHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, video, "video updated successfully"));
 });
-export { publishVideo, getAllVideos, getVideoById, deleteVideo, updateVideo };
+
+const getAllVideosByCourseId = asynchHandler(async (req, res) => {
+    const { courseId } = req.params;
+    const videos = await Video.find({
+        course: courseId,
+    }).populate("course", "title");
+    if (!videos) {
+        throw new ApiError(404, "no videosfound");
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, videos, "videos fetched successfully"));
+}
+);
+export { publishVideo, getAllVideos, getVideoById, deleteVideo, updateVideo, getAllVideosByCourseId };
 
 // Some ToDOs: first only the user who's video is can delete and update the video only 
