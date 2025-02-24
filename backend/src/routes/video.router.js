@@ -5,7 +5,8 @@ import {
      getAllVideos,
      getVideoById,
      deleteVideo,
-     updateVideo
+     updateVideo,
+    getAllVideosByCourseId
     } from "../controllers/video.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
@@ -13,8 +14,8 @@ const router = Router();
 
 router.use(userAuth);
 
-router.route("/")
-.get(getAllVideos)
+router.route("/").get(getAllVideos);
+router.route("/upload")
 .post(
  //jaate hue milkr jana middle ware
     upload.fields([
@@ -33,6 +34,8 @@ router.route("/")
 router.route("/:videoId")
 .get(getVideoById)
 .delete(deleteVideo)
-.patch(upload.single("thumbnail"),updateVideo)
+.patch(upload.single("thumbnail"),updateVideo);
+
+router.route("/coursevideo/:courseId").get(getAllVideosByCourseId);
 
 export default router;

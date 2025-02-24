@@ -20,7 +20,7 @@ const videoSchema = new Schema(
             required: true
         },
         duration: {
-            type: Number, //we can extract the duration through cloudnary object
+            type: Number, 
             required: true
         },
         views: {
@@ -35,10 +35,7 @@ const videoSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "Course"
         },
-        courseName: {
-            type: String,
-            required: true
-        },
+      
         owner: {
             type: Schema.Types.ObjectId,
             ref: "User",
