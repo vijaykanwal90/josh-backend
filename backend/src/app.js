@@ -7,10 +7,11 @@ import videorouter from './routes/video.router.js'
 import cors from 'cors'
 
 const app = express();
-
+const URL = process.env.FRONTEND_URL;
+// console.log(URL)
 app.use(cookieParser());
 const corsOptions = {
-    origin: 'http://localhost:5173',
+    origin: URL,
     credentials: true,
     optionsSuccessStatus: 200,
     allowedHeaders: ['Content-Type', 'Authorization'],
