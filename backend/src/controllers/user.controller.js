@@ -20,7 +20,7 @@ const getUser = asynchHandler(async (req, res) => {
 
 const updateUser = asynchHandler(async (req, res) => {
     try {
-        const {id} = req.params;
+        const { id } = req.params;
         const user = await User.findByIdAndUpdate(id, req.body, {
             new: true,
             runValidators: true
