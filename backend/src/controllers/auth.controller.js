@@ -82,6 +82,7 @@ const registerUser = asynchHandler(async (req, res) => {
 const loginUser = asynchHandler(async (req, res) => {
     const { email, password } = req.body;
     try {
+        console.log("in logged route")
         const user = await User
             .findOne({ email })
             .select("+password")
