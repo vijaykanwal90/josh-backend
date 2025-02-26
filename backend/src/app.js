@@ -31,10 +31,7 @@ app.use('/api/v1/user', userrouter);
 app.use('/api/v1/course', courserouter);
 app.use('/api/v1/video', videorouter);
 app.use('/api/v1/wallet',walletrouter);
-app.use('/api/', (req, res) => {
-    res.send("Welcome to the backend of the application");
-}
-)
+
 
 
 export { app }
