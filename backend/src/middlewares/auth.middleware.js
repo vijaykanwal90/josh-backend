@@ -25,7 +25,7 @@ const userAuth = asynchHandler(async (req, res, next) => {
      }
      catch(error){
          console.log(error);
-         res.status(500).json(new ApiResponse(500,  "Internal Server Error"));
+         return res.status(500).json(new ApiResponse(500,  "Internal Server Error"));
      }
 });
 export { userAuth };

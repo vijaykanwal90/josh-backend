@@ -14,21 +14,21 @@ const publishVideo = asynchHandler(async (req, res) => {
     // console.log(req)
     console.log("req.files:", req.files);
 
-    if ([title, description,course].some((field) => field?.trim() === "")) {
+    if ([title, description, course].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "All fields are required");
     }
-    
-    
+
+
     const VideoLocalPath = await req.files?.videoFile[0]?.path;
     const thumbnailLocalPath = await req.files?.thumbnail[0]?.path;
-    
+
     if (!VideoLocalPath) {
         throw new ApiError(400, "Video file is missing");
     }
     if (!thumbnailLocalPath) {
         throw new ApiError(400, "thumbnail file is missing");
     }
-    
+
     const uploadedVideo = await uploadCloudinary(VideoLocalPath);
     const thumbnail = await uploadCloudinary(thumbnailLocalPath);
     if (!uploadedVideo) {
@@ -41,10 +41,10 @@ const publishVideo = asynchHandler(async (req, res) => {
     const owner = await req.user?._id;
     const duration = uploadedVideo.duration;
     const courseName = await Course.findById(course)
-    if(!courseName){
+    if (!courseName) {
         throw new ApiError(404, "Course not found");
     }
-   
+
 
     const video = await Video.create({
         videoFile: uploadedVideo.url,
@@ -55,7 +55,7 @@ const publishVideo = asynchHandler(async (req, res) => {
         isPublished: true,
         owner,
         course,
-      
+
     });
     if (!video) {
         throw new ApiError(400, "Error while uploading video");
