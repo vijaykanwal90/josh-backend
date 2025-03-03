@@ -5,7 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js"
 import bcrypt from 'bcryptjs';
 import { Wallet } from "../models/Wallet.model.js";
 const registerUser = asynchHandler(async (req, res) => {
-    const { name, email, password, referralcode, mobilenumber } = req.body;
+    let { name, email, password, referralcode, mobilenumber } = req.body;
     try {
         // const validateUser = validateUserInput({ name, email, password, refrralcode, mobilenumber });
         // if(!validateUser){
@@ -13,7 +13,10 @@ const registerUser = asynchHandler(async (req, res) => {
         // }
         // console.log(name);
 
+        email = email.toLowerCase();
+
         console.log("register user");
+
         const exists = await User.findOne({
             $or: [{ email }, { mobilenumber }]
         });
@@ -80,8 +83,9 @@ const registerUser = asynchHandler(async (req, res) => {
 });
 
 const loginUser = asynchHandler(async (req, res) => {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
     try {
+        email = email.toLowerCase();
         console.log("in logged route")
         const user = await User
             .findOne({ email })
