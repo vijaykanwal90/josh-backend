@@ -42,6 +42,7 @@ const registerUser = asynchHandler(async (req, res) => {
         console.log("mobile ", typeof mobilenumber);
         const mobilePart = mobilenumber.slice(-4);
         const randomPart = Math.floor(1000 + Math.random() * 9000);
+    
         const sharableReferralCode = `${namePart}${mobilePart}${randomPart.toString().substring(0, 1)}`;
         const user = new User({
             name,

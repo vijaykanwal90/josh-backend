@@ -11,7 +11,7 @@ const userAuth = asynchHandler(async (req, res, next) => {
         // console.log(res.cookies);
         
         if((!token)){
-            throw new ApiError(401, "Unauthorized");
+            throw new ApiError(401, "you are Unauthorized");
         }
         const decodedJwt = jwt.verify(token, "JoshGuruPvt@2025");
         const {id} = decodedJwt;

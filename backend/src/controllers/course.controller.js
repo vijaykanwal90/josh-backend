@@ -2,19 +2,37 @@ import { ApiError } from "../utils/ApiError.js";
 import { asynchHandler } from "../utils/AsynchHandler.js";
 import { Course } from "../models/course.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { uploadCloudinary } from "../utils/Cloudinary.js";
 
 const createCourse = asynchHandler(async (req, res) => {
-    const { title, description, price, duration, courseMentorName } = req.body;
+    const { title,
+        image,
+        bundleName,
+        category,
+        video,
+        description,
+        price,
+        duration,
+        courseMentorName } = req.body;
+        
     try {
-
+        
+        
         const course = new Course({
             title,
+            image,
+            bundleName,
+            category,
+            video,
             description,
             price,
             duration,
-            courseMentorName
+            courseMentorName,
+
+
         });
         await course.save();
+        console.log("course controller")
         console.log(course)
 
 
