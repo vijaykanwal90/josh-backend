@@ -46,6 +46,28 @@ const updateUser = asynchHandler(async (req, res) => {
     }
 }
 );
-
-
-export { updateUser, getUser };
+const getAllUser = asynchHandler(async(req,res)=>{
+    try {
+        const users = await User.find();
+        console.log(users)
+        if(!users){
+            throw new ApiError(404, "Unable to get Users");
+        }
+        res.status(200).json(new ApiResponse(200, { users }, "Users fetched successfully"));
+    } catch (error) {
+        console.log(error)
+        throw new ApiError(404, "Internal server error");
+    }
+})
+const checkUser = asynchHandler(async(req,res)=>{
+    const user = req.user;
+    try {
+        res.status(200).json(new ApiResponse(200, { user }, "User updated successfully"));
+        
+    } catch (error) {
+        console.log(error)
+        throw new ApiError(500, "Internal server error");
+        
+    }
+})
+export { updateUser, getUser, checkUser,getAllUser };

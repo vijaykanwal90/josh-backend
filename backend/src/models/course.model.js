@@ -5,14 +5,28 @@ const courseSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    courseImageUrl: {
+    image: {
         type: String,
+        required: true
 
+    },
+    bundleName: {
+        type: String,
+    
+    },
+    category:{
+        type: String,
+        required: true
     },
     courseMentorName: {
         type: String,
         required: true
     },
+    video:{
+        type: String,
+        required: true
+    },
+
     description: {
         type: String,
         required: true

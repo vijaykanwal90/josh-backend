@@ -18,7 +18,8 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        default: 'user'
+        enum: ['admin', 'manager', 'user'],
+        default: 'user' 
     },
     courses: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -42,6 +43,8 @@ const userSchema = new mongoose.Schema({
 }, {
     timestamps: true
 })
+
+
 userSchema.methods.verifyPassword = async function (passwordByUser) {
     const user = this;
     const hashedPassword = user.password;
