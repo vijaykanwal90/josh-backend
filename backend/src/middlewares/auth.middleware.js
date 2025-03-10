@@ -7,10 +7,9 @@ import jwt from 'jsonwebtoken';
 const userAuth = asynchHandler(async (req, res, next) => {
 
      try{
-        const {token }= req.cookies;
-        // console.log(res.cookies);
+        const { token }=  req.cookies;
         
-        if((!token)){
+        if(!token){
             throw new ApiError(401, "you are Unauthorized");
         }
         const decodedJwt = jwt.verify(token, "JoshGuruPvt@2025");
