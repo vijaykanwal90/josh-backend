@@ -8,7 +8,8 @@ import { createBundle, updateBundle } from "../controllers/course.controller.js"
 const router = Router();
 
 router.use(userAuth);
-router.route('/createCourse').post(checkRole(['admin']),createCourse).get(getCourses);
+router.route('/createCourse').post(checkRole(['admin']),createCourse);
+router.route('/').get(getCourses);
 router.route('/updateBundle').patch(checkRole(['admin']),updateBundle);
 
 router.route('/createBundle').post(checkRole(['admin']),createBundle);

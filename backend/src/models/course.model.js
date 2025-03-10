@@ -13,9 +13,9 @@ const courseSchema = new mongoose.Schema({
     },
     bundleName: {
         type: String,
-    
+
     },
-    category:{
+    category: {
         type: String,
         required: true
     },
@@ -23,7 +23,7 @@ const courseSchema = new mongoose.Schema({
         type: String,
         // required: true
     },
-    video:{
+    video: {
         type: String,
         // required: true
     },
@@ -32,19 +32,33 @@ const courseSchema = new mongoose.Schema({
         type: String,
         // required: true
     },
-    
+
     price: {
         type: Number,
         required: true
     },
+
     duration: {
         type: String,
-    
+
     },
-    bundle:{
+    bundle: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Bundle',
-        required: true
+    },
+    discount: {
+        type: Number,
+        default: 0
+    },
+    discountedPrice: {
+        type: Number,
+    },
+
+    hasDiscount: {
+        type: Boolean,
+        default: function () {
+            return this.discount > 0;
+        }
     },
     students: [{
         type: mongoose.Schema.Types.ObjectId,

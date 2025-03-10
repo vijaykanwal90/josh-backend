@@ -5,12 +5,13 @@ import courserouter from './routes/course.router.js';
 import walletrouter from './routes/wallet.router.js';
 import cookieParser from 'cookie-parser'
 import videorouter from './routes/video.router.js'
+import discountrouter from './routes/discount.route.js'
 import cors from 'cors'
 
 
 const app = express();
 const URL = process.env.FRONTEND_URL;
-// console.log(URL)
+console.log(URL)
 app.use(cookieParser());
 const corsOptions = {
     origin: "http://localhost:5173",
@@ -31,7 +32,6 @@ app.use('/api/v1/user', userrouter);
 app.use('/api/v1/course', courserouter);
 app.use('/api/v1/video', videorouter);
 app.use('/api/v1/wallet',walletrouter);
+app.use('/api/v1/discount',discountrouter);
 
-
-
-export { app }
+export { app };
