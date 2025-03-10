@@ -156,6 +156,23 @@ const updateBundle = asynchHandler(async(req,res)=>{
         throw new ApiError(500, "Internal server error", error);
     }
 })
+const getBundles = asynchHandler(async(req,res)=>{
+      const {bundleName} = req.query;
+      try{
+        let bundles;
+        if(bundleName && bundleName !== "all"){
+            bundles = await Bundle.find({bundleName});
+      }
+        else{
+            bundles = await Bundle.find({});
+        }
+        return res.status(200).json(new ApiResponse(200, { bundles }, "bundles fetched successfully"));
+    }
+      catch(error){
+        console.error(error);
+        throw new ApiError(500, "Internal server error", error);
+      }
+});
 const getCourses = asynchHandler(async (req, res) => {
     try {
         const courses = await Course.find();
@@ -232,4 +249,4 @@ const deleteCourse = asynchHandler(async (req, res) => {
 
 
 
-export { createCourse, getCourses, getCourseById, getUserCourses, updateCourse, deleteCourse , createBundle , updateBundle};
+export { createCourse, getCourses, getCourseById, getUserCourses, updateCourse, deleteCourse , createBundle , updateBundle , getBundles};
