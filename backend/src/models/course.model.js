@@ -7,7 +7,8 @@ const courseSchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        required: true
+        // required: true,
+        // default:"pending"
 
     },
     bundleName: {
@@ -20,16 +21,16 @@ const courseSchema = new mongoose.Schema({
     },
     courseMentorName: {
         type: String,
-        required: true
+        // required: true
     },
     video:{
         type: String,
-        required: true
+        // required: true
     },
 
     description: {
         type: String,
-        required: true
+        // required: true
     },
     
     price: {
@@ -38,6 +39,11 @@ const courseSchema = new mongoose.Schema({
     },
     duration: {
         type: String,
+    
+    },
+    bundle:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Bundle',
         required: true
     },
     students: [{
