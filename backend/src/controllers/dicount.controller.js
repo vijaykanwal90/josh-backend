@@ -13,6 +13,7 @@ const addDiscount = asynchHandler(async (req, res) => {
         }
         course.discount = discount;
         course.discountedPrice = course.price - (course.price * discount) / 100;
+        course.hasDiscount = true;
         
         await course.save();
         res.status(200).json(new ApiResponse(200, { course }, "Discount added successfully"));
@@ -32,6 +33,7 @@ const removeDiscount = asynchHandler(async (req, res) => {
         }
         course.discount = 0;
         course.discountedPrice = course.price;
+        course.hasDiscount = false;
         await course.save();
         res.status(200).json(new ApiResponse(200, { course }, "Discount removed successfully"));
     } catch (error) {

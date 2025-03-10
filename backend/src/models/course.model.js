@@ -56,9 +56,7 @@ const courseSchema = new mongoose.Schema({
 
     hasDiscount: {
         type: Boolean,
-        default: function () {
-            return this.discount > 0;
-        }
+        default: false
     },
     students: [{
         type: mongoose.Schema.Types.ObjectId,
