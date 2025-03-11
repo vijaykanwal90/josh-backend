@@ -8,7 +8,6 @@ const router = Router();
 
 router.use(userAuth);
 
-
 router.route("/").put(checkRole(['admin']), addDiscount)
 router.route("/remove").put(checkRole(['admin']), removeDiscount);
 
