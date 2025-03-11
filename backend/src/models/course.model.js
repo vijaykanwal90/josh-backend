@@ -17,7 +17,6 @@ const courseSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        required: true
     },
     courseMentorName: {
         type: String,
@@ -46,18 +45,7 @@ const courseSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Bundle',
     },
-    discount: {
-        type: Number,
-        default: 0
-    },
-    discountedPrice: {
-        type: Number,
-    },
 
-    hasDiscount: {
-        type: Boolean,
-        default: false
-    },
     students: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'

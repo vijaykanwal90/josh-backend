@@ -9,7 +9,8 @@ const router = Router();
 router.use(userAuth);
 
 
-router.route("/").patch(checkRole(['admin']), addDiscount).delete(checkRole(['admin']), removeDiscount);
+router.route("/").put(checkRole(['admin']), addDiscount)
+router.route("/remove").put(checkRole(['admin']), removeDiscount);
 
 export default router;
 

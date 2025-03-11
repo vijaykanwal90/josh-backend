@@ -1,4 +1,4 @@
-import { Course } from "../models/course.model.js";
+import { Bundle } from "../models/bundle.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asynchHandler } from "../utils/AsynchHandler.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -7,7 +7,7 @@ import { ApiError } from "../utils/ApiError.js";
 const addDiscount = asynchHandler(async (req, res) => {
     const { discount, courseId } = req.body;
     try {
-        const course = await Course.findById(courseId);
+        const course = await Bundle.findById(courseId);
         if (!course) {
             throw new ApiError(404, "Course not found");
         }
@@ -24,10 +24,11 @@ const addDiscount = asynchHandler(async (req, res) => {
 }
 );
 
-const removeDiscount = asynchHandler(async (req, res) => {
+const removeDiscount = asynchHandler(async(req, res) => {
     const { courseId } = req.body;
+    console.log(courseId);
     try {
-        const course = await Course.findById(courseId);
+        const course = await Bundle.findById(courseId);
         if (!course) {
             throw new ApiError(404, "Course not found");
         }
