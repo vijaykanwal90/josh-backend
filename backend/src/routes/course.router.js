@@ -11,15 +11,22 @@ import { createCourse,
     deleteCourse,
     createBundle,
     updateBundle,
-    getBundles} from "../controllers/course.controller.js";
+    getBundles,
+    getAllBundles,
+    getBundleById,
+
+} from "../controllers/course.controller.js";
 
 const router = Router();
 
 // router.use(userAuth);
+
 router.route('/createCourse').post(userAuth,checkRole(['admin']),createCourse);
 router.route('/getCourses').get(getCourses);
 router.route('/updateBundle').patch(userAuth,checkRole(['admin']),updateBundle);
 router.route('/getBundles').get(getBundles);
+router.route('/getAllBundles').get(getAllBundles);
+router.route('/bundles/:id').get(getBundleById);
 router.route('/createBundle').post(userAuth,checkRole(['admin']),createBundle);
 router.route('/:id').get(getCourseById).patch(userAuth,updateCourse).delete(checkRole(['admin']),deleteCourse);
 router.route('/:userId').get(getUserCourses);

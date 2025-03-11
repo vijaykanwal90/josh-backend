@@ -129,6 +129,34 @@ const getBundles = asynchHandler(async (req, res) => {
     }
 });
 
+const getBundleById = asynchHandler(async (req, res) => {
+        const { id } = req.params;
+        try {
+            const bundle = await Bundle
+                .findById(id)
+                .populate("courses");
+            if (!bundle) {
+                throw new ApiError(404, "Bundle not found");
+            }
+            return res.status(200).json(new ApiResponse(200, { bundle }, "Bundle fetched successfully"));
+        } catch (error) {
+            console.error(error);
+            throw new ApiError(500, "Internal server error", error);
+        }
+    }
+    );
+
+
+    const getAllBundles = asynchHandler(async (req, res) => {
+        try {
+            const bundles = await Bundle.find();
+            return res.status(200).json(new ApiResponse(200, { bundles }, "Bundles fetched successfully"));
+        } catch (error) {
+            console.error(error);
+            throw new ApiError(500, "Internal server error");
+        }
+    })
+
 // Fetch all courses
 const getCourses = asynchHandler(async (req, res) => {
     try {
@@ -216,6 +244,8 @@ const deleteCourse = asynchHandler(async (req, res) => {
     }
 });
 
+
+
 export {
     createCourse,
     getCourses,
@@ -225,5 +255,7 @@ export {
     deleteCourse,
     createBundle,
     updateBundle,
-    getBundles
+    getBundles,
+    getBundleById,
+    getAllBundles
 };

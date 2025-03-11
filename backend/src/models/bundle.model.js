@@ -13,14 +13,21 @@ const bundleSchema = new mongoose.Schema({
         type: String,
         // required: true
     },
-    oldePrice:{
-        type: Number,
-        // required: true,
-        // default: 0
-    },
     price: {
         type: Number,
         // required: true
+    },
+    discount: {
+        type: Number,
+        default: 0
+    },
+    discountedPrice: {
+        type: Number,
+    },
+
+    hasDiscount: {
+        type: Boolean,
+        default: false
     },
     students: [{
             type: mongoose.Schema.Types.ObjectId,
