@@ -6,6 +6,7 @@ import walletrouter from './routes/wallet.router.js';
 import cookieParser from 'cookie-parser'
 import videorouter from './routes/video.router.js'
 import discountrouter from './routes/discount.route.js'
+import popuprouter from './routes/popup.router.js'
 import cors from 'cors'
 
 
@@ -33,5 +34,6 @@ app.use('/api/v1/course', courserouter);
 app.use('/api/v1/video', videorouter);
 app.use('/api/v1/wallet',walletrouter);
 app.use('/api/v1/discount',discountrouter);
+app.use('/api/v1/popup',popuprouter);
 
 export { app };
