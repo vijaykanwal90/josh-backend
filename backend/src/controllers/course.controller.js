@@ -2,6 +2,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { asynchHandler } from "../utils/AsynchHandler.js";
 import { Course } from "../models/course.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { User } from "../models/user.model.js";
 // import { uploadCloudinary } from "../utils/Cloudinary.js";
 import { Bundle } from "../models/bundle.model.js";
 
@@ -128,7 +129,45 @@ const getBundles = asynchHandler(async (req, res) => {
         throw new ApiError(500, "Internal server error", error);
     }
 });
+const getCourseByName = asynchHandler(async(req,res)=>{
+    const {name} = req.body;
+    console.log(name)
+    try{
+        const course = await Course.find({
+            title: { $regex: name, $options: "i" } 
+        });
 
+        if (course.length === 0) {
+            throw new ApiError(404, "No bundles matching the name found");
+        }
+
+        return res.status(200).json(new ApiResponse(200,{course},"Course fetched successfully"));
+    }
+    catch(error){
+        console.error(error);
+        throw new ApiError(500,"Internal server error",error);
+    }
+
+})
+const getBundleByName = asynchHandler(async(req,res)=>{
+    const {name} = req.body;
+    try{
+        const bundle = await Bundle.find({
+            bundleName: { $regex: name, $options: "i" } // "i" for case-insensitive matching
+        });
+
+        if (bundle.length === 0) {
+            throw new ApiError(404, "No bundles matching the name found");
+        }
+
+        return res.status(200).json(new ApiResponse(200,{bundle},"Bundle fetched successfully"));
+    }
+    catch(error){
+        console.error(error);
+        throw new ApiError(500,"Internal server error",error);
+    }
+    
+})
 const getBundleById = asynchHandler(async (req, res) => {
         const { id } = req.params;
         try {
@@ -144,10 +183,10 @@ const getBundleById = asynchHandler(async (req, res) => {
             throw new ApiError(500, "Internal server error", error);
         }
     }
-    );
+);
 
 
-    const getAllBundles = asynchHandler(async (req, res) => {
+const getAllBundles = asynchHandler(async (req, res) => {
         try {
             const bundles = await Bundle.find().populate("courses");
             return res.status(200).json(new ApiResponse(200, { bundles }, "Bundles fetched successfully"));
@@ -243,7 +282,65 @@ const deleteCourse = asynchHandler(async (req, res) => {
         throw new ApiError(500, "Internal server error");
     }
 });
+const assignCourse = asynchHandler(async (req,res)=>{
+    const {courseId,studentId} = req.body;
+    try{
+        console.log(courseId);
+        console.log(studentId);
 
+        const course = await Course.findById(courseId);
+        if(!course){
+            throw new ApiError(404,"Course not found");
+        }
+        if(course.students.includes(studentId)){
+            throw new ApiError(400,"User already assigned to course");
+        }
+        course.students.push(studentId);
+        const user = await User.findById(studentId);
+        if(!user){
+            throw new ApiError(404,"User not found");
+        }
+        if(user.courses.includes(courseId)){
+            throw new ApiError(400,"Course already assigned to user");
+        }
+        user.courses.push(courseId);
+        await course.save();
+        await user.save();
+        return res.status(200).json(new ApiResponse(200, { course,user }, "Course deleted successfully"));
+    }
+    catch(error){
+        console.log(error)
+        throw new ApiError(500,"Internal server error",error);
+    }
+})
+const assignBundle = asynchHandler(async (req,res)=>{
+    const {bundleId,userId} = req.body;
+    try{
+        const bundle = await Bundle.findById(bundleId);
+        if(!bundle){
+            throw new ApiError(404,"Course not found");
+        }
+        if(bundle.students.includes(userId)){
+            throw new ApiError(400,"User already assigned to course");
+        }
+        bundle.students.push(userId);
+        const user = await User.findById(userId);
+        if(!user){
+            throw new ApiError(404,"User not found");
+        }
+        if(user.bundles.includes(bundleId)){
+            throw new ApiError(400,"Course already assigned to user");
+        }
+        user.bundles.push(bundleId);
+        await bundle.save();
+        await user.save();
+        return res.status(200).json(new ApiResponse(200, { bundle,user }, "Course deleted successfully"));
+    }
+    catch(error){
+        console.log(error)
+        throw new ApiError(500,"Internal server error",error);
+    }
+})
 
 
 export {
@@ -257,5 +354,9 @@ export {
     updateBundle,
     getBundles,
     getBundleById,
-    getAllBundles
+    getAllBundles,
+    assignCourse,
+    assignBundle,
+    getCourseByName,
+    getBundleByName
 };

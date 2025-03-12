@@ -25,6 +25,10 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Course'
     }],
+    bundles: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Bundle'
+    }],
     mobilenumber: {
         type: String,
         required: true

@@ -7,7 +7,7 @@ const bundleSchema = new mongoose.Schema({
     bundleImage:{
         type: String,
         // required: true,
-        bundleImage: "pending"
+        default: "pending"
     },
     description: {
         type: String,
