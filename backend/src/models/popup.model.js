@@ -1,18 +1,26 @@
 import mongoose from "mongoose";
 
-const popupMessageSchema = new mongoose.Schema({
-
-    message: {
+const popupSchema = new mongoose.Schema({
+    text:{
         type: String,
         required: true
     },
-    isActive: {
+    bundle:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Bundle'
+    },
+    isActive:{
         type: Boolean,
         default: true
     },
+    isDeleted:{
+        type: Boolean,
+        default: false
+    },
+    
 }, {
     timestamps: true
 });
-   
 
-export const PopupMessage = mongoose.model('PopupMessage', popupMessageSchema);
+
+export const Popup = mongoose.model('Popup', popupSchema);
