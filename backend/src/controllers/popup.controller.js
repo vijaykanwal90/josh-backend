@@ -7,7 +7,7 @@ const getPopup = asynchHandler(async (req, res) => {
     try {
         const popup = await Popup.find({
             $and: [{ isActive: true }, { isDeleted: false }]
-        }).populate("bundle", "_id bundleName");
+        }).populate("bundle", "_id bundleName price discountedPrice discount ");
 
         if (!popup) {
             throw new ApiError(404, "Popup not found");
