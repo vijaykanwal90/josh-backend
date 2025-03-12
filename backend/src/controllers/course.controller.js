@@ -314,11 +314,15 @@ const assignCourse = asynchHandler(async (req,res)=>{
     }
 })
 const assignBundle = asynchHandler(async (req,res)=>{
-    const {bundleId,userId} = req.body;
+    // const {userId} = req.body;
+    const bundleId = req.body.courseId;
+    const userId = req.body.studentId;
     try{
+        console.log(bundleId)
+        console.log(userId)
         const bundle = await Bundle.findById(bundleId);
         if(!bundle){
-            throw new ApiError(404,"Course not found");
+            throw new ApiError(404,"Bundle not found");
         }
         if(bundle.students.includes(userId)){
             throw new ApiError(400,"User already assigned to course");
