@@ -6,11 +6,11 @@ import { userAuth } from "../middlewares/auth.middleware.js";
 
 
 const router = Router();
-router.use(userAuth);
 
 
-router.route("/").get(checkRole(['admin']),getPopup);
-router.route("/").post(checkRole(['admin']),createPopup);
-router.route("/:id").delete(checkRole(['admin']),deletePopup);
+
+router.route("/").get(getPopup);
+router.route("/").post(userAuth,checkRole(['admin']),createPopup);
+router.route("/:id").delete(userAuth,checkRole(['admin']),deletePopup);
 
 export default router;
