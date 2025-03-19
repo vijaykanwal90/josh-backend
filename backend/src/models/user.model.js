@@ -14,12 +14,12 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
-        select:false
+        select: false
     },
     role: {
         type: String,
         enum: ['admin', 'manager', 'user'],
-        default: 'user' 
+        default: 'user'
     },
     courses: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -42,6 +42,25 @@ const userSchema = new mongoose.Schema({
     sharableReferralCode: {
         type: String
     },
+    referred_by: {
+        type: String,
+    },
+    total_income: {
+        type: Number, default: 0
+    },
+    today_income: {
+        type: Number, default: 0
+    },
+    last_7_days_income: {
+        type: Number, default: 0
+    },
+    last_30_days_income: {
+        type: Number, default: 0
+    },
+    incentive: {
+        type: Number,
+        default: 0
+    },
 
 
 }, {
@@ -54,11 +73,11 @@ userSchema.methods.verifyPassword = async function (passwordByUser) {
     const hashedPassword = user.password;
     const isValid = await bcrypt.compare(passwordByUser, hashedPassword);
     return isValid;
-    
+
 }
 userSchema.methods.getJWT = (async function () {
     const user = this;
-    const token = await jwt.sign({id: user._id},"JoshGuruPvt@2025");
+    const token = await jwt.sign({ id: user._id }, "JoshGuruPvt@2025");
     return token;
 })
 
