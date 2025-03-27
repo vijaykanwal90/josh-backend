@@ -8,11 +8,13 @@ const userAuth = asynchHandler(async (req, res, next) => {
 
      try{
         const { token }=  req.cookies;
-        
+       
+       
         if(!token){
             throw new ApiError(401, "you are Unauthorized");
         }
         const decodedJwt = jwt.verify(token, "JoshGuruPvt@2025");
+
         const {id} = decodedJwt;
         const user = await User.findById({_id:id});
         if(!user){

@@ -4,7 +4,7 @@ const bundleSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    bundleImage:{
+    bundleImage: {
         type: String,
         // required: true,
         default: "pending"
@@ -30,13 +30,14 @@ const bundleSchema = new mongoose.Schema({
         default: false
     },
     students: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     }],
     courses: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Course'  // Array of references to Course schema
-    }]
+    }],
+   
 });
 
 // module.exports = mongoose.model('Bundle', bundleSchema);

@@ -3,7 +3,8 @@ import { Router } from "express";
 import { userAuth } from "../middlewares/auth.middleware.js";
 import { checkRole } from "../middlewares/role.middleware.js";
 
-import { createCourse,
+import { 
+    createCourse,
     getCourses,
     getCourseById,
     getUserCourses,
@@ -39,7 +40,7 @@ router.route('/assignCourse').patch(userAuth,checkRole(['admin']),assignCourse);
 router.route('/:id').get(getCourseById).patch(userAuth,updateCourse).delete(checkRole(['admin']),deleteCourse);
 router.route('/:userId').get(getUserCourses);
 router.route('/:id').get(getCourseById).patch(userAuth,checkRole(['admin']),updateCourse).delete(userAuth,checkRole(['admin']),deleteCourse);
-
+router.route('/').get(getCourses);
 
 export default router;
 

@@ -49,7 +49,12 @@ const courseSchema = new mongoose.Schema({
     students: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
-    }]
+    }],
+
+    isTrending: {
+        type: Boolean,
+        default: false
+    },
 }, {
     timestamps: true
 
