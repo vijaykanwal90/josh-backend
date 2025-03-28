@@ -37,6 +37,10 @@ const bundleSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Course'  // Array of references to Course schema
     }],
+    isSpecial: {
+        type: Boolean,
+        default: false
+    },
    
 });
 
