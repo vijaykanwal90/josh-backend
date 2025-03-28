@@ -28,7 +28,7 @@ const router = Router();
 
 router.route('/createCourse').post(userAuth,checkRole(['admin']),createCourse);
 router.route('/getCourses').get(getCourses);
-router.route('/updateBundle').patch(userAuth,checkRole(['admin']),updateBundle);
+router.route('/updateBundle/:id').patch(userAuth,checkRole(['admin']),updateBundle);
 router.route('/getCourseByName').get(userAuth,getCourseByName);
 router.route('/getBundleByName').get(userAuth,getBundleByName);
 router.route('/getBundles').get(getBundles);

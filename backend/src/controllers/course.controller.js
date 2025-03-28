@@ -93,7 +93,7 @@ const createBundle = asynchHandler(async (req, res) => {
 // Update an existing bundle
 const updateBundle = asynchHandler(async (req, res) => {
     const { id } = req.params;
-
+    console.log(id);
     try {
         const updatedBundle = await Bundle.findByIdAndUpdate(id, req.body, {
             new: true,
