@@ -188,6 +188,8 @@ const getBundleById = asynchHandler(async (req, res) => {
 
 const getAllBundles = asynchHandler(async (req, res) => {
         try {
+            console.log("Fetching all bundles");
+            // Fetch all bundles and populate the courses field
             const bundles = await Bundle.find().populate("courses");
             return res.status(200).json(new ApiResponse(200, { bundles }, "Bundles fetched successfully"));
         } catch (error) {

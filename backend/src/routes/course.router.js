@@ -33,7 +33,7 @@ router.route('/getCourseByName').get(userAuth,getCourseByName);
 router.route('/getBundleByName').get(userAuth,getBundleByName);
 router.route('/getBundles').get(getBundles);
 router.route('/getAllBundles').get(getAllBundles);
-router.route('/bundles/:id').get(getBundleById);
+router.route('/getBundle/:id').get(getBundleById);
 router.route('/createBundle').post(userAuth,checkRole(['admin']),createBundle);
 router.route('/assignBundle').patch(userAuth,checkRole(['admin']),assignBundle);
 router.route('/assignCourse').patch(userAuth,checkRole(['admin']),assignCourse);
