@@ -34,15 +34,14 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     // this is referral code entered by the user
-    referralcode: {
-        type: String
-    },
+   
     // one for each user to share
 
     sharableReferralCode: {
-        type: String
+        type: String,
+        unique: true,
     },
-    referred_by: {
+    referredByCode: {
         type: String,
     },
     total_income: {
@@ -61,7 +60,14 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-
+    myTeam: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    totalTeam: {
+        type: Number,
+        default: 0
+    },
 
 }, {
     timestamps: true

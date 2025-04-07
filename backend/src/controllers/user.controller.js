@@ -6,7 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 const getUser = asynchHandler(async (req, res) => {
     try {
         const user = await User.findById(req.user._id
-        );
+        ).populate("courses").populate("bundles");
         if (!user) {
             throw new ApiError(404, "User not found");
         }

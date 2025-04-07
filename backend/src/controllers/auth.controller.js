@@ -49,7 +49,8 @@ const registerUser = asynchHandler(async (req, res) => {
             email,
             password: hashedPassword,
             sharableReferralCode,
-            mobilenumber
+            mobilenumber,
+            referredByCode: referralcode,
         });
 
         await user.save();

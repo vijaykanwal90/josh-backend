@@ -320,8 +320,8 @@ const assignBundle = asynchHandler(async (req,res)=>{
     const bundleId = req.body.courseId;
     const userId = req.body.studentId;
     try{
-        console.log(bundleId)
-        console.log(userId)
+        // console.log(bundleId)
+        // console.log(userId)
         const bundle = await Bundle.findById(bundleId);
         if(!bundle){
             throw new ApiError(404,"Bundle not found");
@@ -335,16 +335,42 @@ const assignBundle = asynchHandler(async (req,res)=>{
             throw new ApiError(404,"User not found");
         }
         if(user.bundles.includes(bundleId)){
-            throw new ApiError(400,"Course already assigned to user");
+            throw new ApiError(400,"Bundle already assigned to user");
         }
         user.bundles.push(bundleId);
+        const oneLevelUser = await User.findOne({ sharableReferralCode: user.referredByCode });
+        if(!oneLevelUser){
+            throw new ApiError(404,"User not found");
+        }
+        // one level up user
+        if(oneLevelUser){
+            oneLevelUser.total_income += bundle.price * 0.25;
+            oneLevelUser.today_income +=  bundle.price * 0.25;
+            oneLevelUser.last_7_days_income +=  bundle.price * 0.25;
+            oneLevelUser.last_30_days_income +=  bundle.price * 0.25;
+            oneLevelUser.myTeam.push(user._id);
+            oneLevelUser.totalTeam += 1;
+            await oneLevelUser.save();
+        }
+        // second level user;
+        const secondLevelUser = await User.findOne({sharableReferralCode: oneLevelUser.referredByCode});
+        if(secondLevelUser){
+            secondLevelUser.today_income +=  bundle.price * 0.10;
+            secondLevelUser.total_income += secondLevelUser.today_income;
+
+            secondLevelUser.last_7_days_income +=  bundle.price * 0.10;
+            secondLevelUser.last_30_days_income +=  bundle.price * 0.10;
+            secondLevelUser.myTeam.push(user._id);
+            secondLevelUser.totalTeam += 1;
+            await secondLevelUser.save();
+        }
         await bundle.save();
         await user.save();
-        return res.status(200).json(new ApiResponse(200, { bundle,user }, "Course deleted successfully"));
+        return res.status(200).json(new ApiResponse(200, { bundle,user }, "Bundle assigned successfully"));
     }
     catch(error){
         console.log(error)
-        throw new ApiError(500,"Internal server error",error);
+        throw new ApiError(500,"Error while assigning bundle",error);
     }
 })
 
