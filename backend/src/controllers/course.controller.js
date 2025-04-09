@@ -7,60 +7,158 @@ import { User } from "../models/user.model.js";
 import { Bundle } from "../models/bundle.model.js";
 
 // Create a course and link it to a bundle
+// const createCourse = asynchHandler(async (req, res) => {
+//     const {
+//         title,
+//         image,
+//         bundleName,
+//         category,
+//         video,
+//         description,
+//         price,
+//         duration,
+//         courseMentorName
+//     } = req.body;
+
+//     try {
+//         // Check if the bundle already exists
+//         let bundle = await Bundle.findOne({ bundleName });
+
+//         // If the bundle doesn't exist, create a new bundle
+//         if (!bundle) {
+//             bundle = new Bundle({
+//                 bundleName,
+//                 // You can customize the description and price as needed
+//                 courses: [] // Start with an empty courses array
+//             });
+//             await bundle.save();
+//         }
+
+//         // Create the course and link it to the bundle
+//         const course = new Course({
+//             title,
+//             image,
+//             bundle: bundle._id, // Add bundle ID reference here
+//             category,
+//             video,
+//             description,
+//             price,
+//             duration,
+//             courseMentorName
+//         });
+
+//         // Save the course to the database
+//         await course.save();
+
+//         // Add the course to the bundle's courses array
+//         bundle.courses.push(course._id);
+//         await bundle.save();
+
+//         return res.status(201).json(new ApiResponse(201, { course }, "Course created successfully"));
+//     } catch (error) {
+//         console.error(error);
+//         throw new ApiError(500, "Internal server error", error);
+//     }
+// });
 const createCourse = asynchHandler(async (req, res) => {
     const {
+      title,
+      image,
+      bundleName,
+      category,
+      description,
+      price,
+      duration,
+      courseMentorName,
+      whyCourse,
+      whatYouWillLearn,
+      courseHighlights,
+      whoShouldEnroll,
+      videos = []
+    } = req.body;
+  
+    try {
+      // Find or create bundle
+      let bundle = await Bundle.findOne({ bundleName });
+  
+      if (!bundle) {
+        bundle = new Bundle({
+          bundleName,
+          courses: []
+        });
+        await bundle.save();
+      }
+  
+      // marking first video as preview true
+      const formattedVideos = videos.map((video, index) => ({
+        title: video.title,
+        url: convertToEmbedUrl(video.url),
+        isPreview: index === 0 ? true : (video.isPreview || false)
+      }));
+  
+      // Create course with videos
+      const course = new Course({
         title,
         image,
-        bundleName,
+        bundle: bundle._id,
         category,
-        video,
         description,
         price,
         duration,
-        courseMentorName
-    } = req.body;
-
-    try {
-        // Check if the bundle already exists
-        let bundle = await Bundle.findOne({ bundleName });
-
-        // If the bundle doesn't exist, create a new bundle
-        if (!bundle) {
-            bundle = new Bundle({
-                bundleName,
-                // You can customize the description and price as needed
-                courses: [] // Start with an empty courses array
-            });
-            await bundle.save();
-        }
-
-        // Create the course and link it to the bundle
-        const course = new Course({
-            title,
-            image,
-            bundle: bundle._id, // Add bundle ID reference here
-            category,
-            video,
-            description,
-            price,
-            duration,
-            courseMentorName
-        });
-
-        // Save the course to the database
-        await course.save();
-
-        // Add the course to the bundle's courses array
-        bundle.courses.push(course._id);
-        await bundle.save();
-
-        return res.status(201).json(new ApiResponse(201, { course }, "Course created successfully"));
+        courseMentorName,
+        videos: formattedVideos,
+        whyCourse,
+        whatYouWillLearn,
+        courseHighlights,
+        whoShouldEnroll
+      });
+  
+      await course.save();
+  
+      // Add course to bundle
+      bundle.courses.push(course._id);
+      await bundle.save();
+  
+      return res.status(201).json(
+        new ApiResponse(201, { course }, "Course created with videos successfully")
+      );
+  
     } catch (error) {
-        console.error(error);
-        throw new ApiError(500, "Internal server error", error);
+      console.error(error);
+      throw new ApiError(500, "Internal server error", error);
     }
-});
-
+  });
+  
+  const addVideos = asynchHandler(async (req, res) => {
+    const { courseId } = req.params;
+    const { videos = [] } = req.body;
+  
+    try {
+      const course = await Course.findById(courseId);
+      if (!course) {
+        throw new ApiError(404, "Course not found");
+      }
+  
+      const isCourseEmpty = course.videos.length === 0;
+  
+      const newVideos = videos.map((video, index) => ({
+        title: video.title,
+        url: convertToEmbedUrl(video.url),
+        isPreview: isCourseEmpty && index === 0 // Only the first video if course is empty
+      }));
+  
+      course.videos.push(...newVideos);
+      await course.save();
+  
+      return res
+        .status(200)
+        .json(new ApiResponse(200, { course }, "Videos added successfully"));
+    } catch (error) {
+      console.error(error);
+      throw new ApiError(500, "Internal server error", error);
+    }
+  });
+  
 // Create a new bundle
 const createBundle = asynchHandler(async (req, res) => {
     const {
@@ -390,5 +488,18 @@ export {
     assignCourse,
     assignBundle,
     getCourseByName,
-    getBundleByName
+    getBundleByName, 
+    addVideos
 };
+function convertToEmbedUrl(url) {
+    try {
+      const parsedUrl = new URL(url);
+      const videoId = parsedUrl.pathname.split('/').pop();
+      const query = parsedUrl.search; // includes ?si=...
+      return `https://www.youtube.com/embed/${videoId}${query}`;
+    } catch (error) {
+      console.error("Invalid URL:", url);
+      return url; // return as-is if something fails
+    }
+  }
+  

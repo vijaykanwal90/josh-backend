@@ -2,66 +2,80 @@ import mongoose from "mongoose";
 
 const courseSchema = new mongoose.Schema({
     title: {
-        type: String,
-        required: true
+      type: String,
+      required: true
     },
     image: {
-        type: String,
-        // required: true,
-        // default:"pending"
-
+      type: String,
     },
     bundleName: {
-        type: String,
-
+      type: String,
     },
     category: {
-        type: String,
+      type: String,
     },
     courseMentorName: {
-        type: String,
-        // required: true
+      type: String,
     },
-    video: {
-        type: String,
-        // required: true
-    },
-
+  
+    // 👇 Multiple videos with preview flag
+    videos: [
+      {
+        title: String,
+        url: String,
+        isPreview: {
+          type: Boolean,
+          default: false  // true for first video
+        }
+      }
+    ],
+  
     description: {
-        type: String,
-        // required: true
+      type: String,
     },
-
+  
     price: {
-        type: Number,
-        required: true
+      type: Number,
+      required: true
     },
-
+  
     duration: {
-        type: String,
-
+      type: String,
     },
+  
     bundle: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Bundle',
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Bundle',
     },
-
+  
+    // 👇 Track enrolled students
     students: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    mentor: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    }],
+        ref: 'Mentor'
+      }],
     whyCourse: [{
-        type: String
-        
+      type: String
     }],
-
+    whatYouWillLearn: [{
+        type: String
+        }],
+    courseHighlights: [{
+        type: String
+        }],
+    whoShouldEnroll: [{
+        type: String
+        }],
     isTrending: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false
     },
-}, {
+  
+  }, {
     timestamps: true
-
-});
-
+  });
+  
 export const Course = mongoose.model('Course', courseSchema);

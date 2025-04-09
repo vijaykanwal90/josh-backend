@@ -81,11 +81,11 @@ userSchema.methods.verifyPassword = async function (passwordByUser) {
     return isValid;
 
 }
-userSchema.methods.getJWT = (async function () {
+userSchema.methods.getJWT =  function () {
     const user = this;
-    const token = await jwt.sign({ id: user._id }, "JoshGuruPvt@2025");
+    const token =  jwt.sign({ id: user._id }, "JoshGuruPvt@2025");
     return token;
-})
+}
 
 export const User = mongoose.model('User', userSchema);
 
