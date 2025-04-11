@@ -7,8 +7,10 @@ import cookieParser from 'cookie-parser'
 import videorouter from './routes/video.router.js'
 import discountrouter from './routes/discount.route.js'
 import popuprouter from './routes/popup.router.js'
+import testimonialRouter from './routes/testimonial.router.js'
+import blogrouter from './routes/blog.router.js'
 import cors from 'cors'
-
+import studentTestimonialRouter from "./routes/studentTestimonial.router.js";
 
 const app = express();
 const URL = process.env.FRONTEND_URL;
@@ -34,6 +36,10 @@ app.use('/api/v1/course', courserouter);
 app.use('/api/v1/video', videorouter);
 app.use('/api/v1/wallet',walletrouter);
 app.use('/api/v1/discount',discountrouter);
+app.use('/api/v1/blog', blogrouter);
+
+app.use("/api/v1/testimonials", testimonialRouter);
+app.use("/api/v1/studenttestimonials", studentTestimonialRouter);
 app.use('/api/v1/popup',popuprouter);
 
 export { app };
