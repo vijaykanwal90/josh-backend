@@ -11,9 +11,6 @@ const courseSchema = new mongoose.Schema({
     bundleName: {
       type: String,
     },
-    category: {
-      type: String,
-    },
     courseMentorName: {
       type: String,
     },
