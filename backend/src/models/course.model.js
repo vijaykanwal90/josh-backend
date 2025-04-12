@@ -14,6 +14,9 @@ const courseSchema = new mongoose.Schema({
     courseMentorName: {
       type: String,
     },
+    category: {
+      type: String,
+    },
   
     // 👇 Multiple videos with preview flag
     videos: [
