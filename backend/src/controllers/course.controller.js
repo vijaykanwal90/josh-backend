@@ -136,24 +136,29 @@ const createCourse = asynchHandler(async (req, res) => {
 
 const addVideos = asynchHandler(async (req, res) => {
     const { courseId } = req.params;
-    const { videos = [] } = req.body;
-
+    const { video  } = req.body;
+    console.log(video)
     try {
         const course = await Course.findById(courseId);
         if (!course) {
             throw new ApiError(404, "Course not found");
         }
-
+        console.log("adding videos ")
         const isCourseEmpty = course.videos.length === 0;
 
-        const newVideos = videos.map((video, index) => ({
+        const newVideos = video.map((video, index) => ({
             title: video.title,
             url: convertToEmbedUrl(video.url),
-            isPreview: isCourseEmpty && index === 0 // Only the first video if course is empty
-        }));
+            isPreview: isCourseEmpty && index === 0 || video.isPreview || false
 
+        }));
+         
         course.videos.push(...newVideos);
         await course.save();
+        const updatedCourse = await Course.findById(courseId);
+        console.log("videos added");
+        console.log(updatedCourse.videos);
+        
 
         return res
             .status(200)
@@ -394,6 +399,7 @@ const deleteCourse = asynchHandler(async (req, res) => {
 });
 const assignCourse = asynchHandler(async (req, res) => {
     const { courseId, studentId } = req.body;
+
     try {
         console.log(courseId);
         console.log(studentId);
@@ -402,27 +408,42 @@ const assignCourse = asynchHandler(async (req, res) => {
         if (!course) {
             throw new ApiError(404, "Course not found");
         }
+
+        // ✅ Update all videos to be previewable
+        course.videos = course.videos.map(video => ({
+            ...video._doc,
+            isPreview: true
+        }));
+
+        // ✅ Avoid duplicate assignment
         if (course.students.includes(studentId)) {
             throw new ApiError(400, "User already assigned to course");
         }
+
         course.students.push(studentId);
+
         const user = await User.findById(studentId);
         if (!user) {
             throw new ApiError(404, "User not found");
         }
+
         if (user.courses.includes(courseId)) {
             throw new ApiError(400, "Course already assigned to user");
         }
+
         user.courses.push(courseId);
+
         await course.save();
         await user.save();
-        return res.status(200).json(new ApiResponse(200, { course, user }, "Course deleted successfully"));
+
+        return res.status(200).json(new ApiResponse(200, { course, user }, "Course assigned and all videos unlocked (as previews)"));
     }
     catch (error) {
-        console.log(error)
+        console.log(error);
         throw new ApiError(500, "Internal server error", error);
     }
-})
+});
+
 const assignBundle = asynchHandler(async (req, res) => {
     // const {userId} = req.body;
     const bundleId = req.body.courseId;
