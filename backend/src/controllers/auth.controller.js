@@ -122,5 +122,40 @@ const logoutUser = (req, res) => {
     }
 }
 
+const checkUserExist = asynchHandler(async (req, res) => {
+    console.log(req.body)
+    let { mobilenumber,email } = req.body;
+    console.log(mobilenumber)
+    console.log(email);
+    try {
+        let user = await User.findOne(
+            {
+                mobilenumber
+            }
+        )
+        console.log(user)
+        if(user){
+            throw new ApiError(400, "Mobile number already exists");
+        }
+        if (!user) {
+             user = await User.findOne(
+                {
+                    email
+                }
+            )
+        }
+        if(user){
+        throw new ApiError(400, "Email already exists");
+        }   
+        if (!user) {
+          return  res.status(200).json(new ApiResponse(200, null, "User not found")); 
+        }
+       
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(new ApiResponse(500, null, error.message));
+    }
+}
+);
 
-export { registerUser, loginUser, logoutUser };
+export { registerUser, loginUser, logoutUser, checkUserExist };
