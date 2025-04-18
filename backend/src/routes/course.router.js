@@ -19,7 +19,8 @@ import {
     assignCourse,
     getCourseByName,
     getBundleByName,
-    addVideos
+    addVideos,
+    assignMentor
 
 } from "../controllers/course.controller.js";
 
@@ -38,6 +39,7 @@ router.route('/getBundles').get(getBundles);
 router.route('/getAllBundles').get(getAllBundles);
 router.route('/getBundle/:id').get(getBundleById);
 router.route('/createBundle').post(userAuth,checkRole(['admin']),createBundle);
+router.route('/assignMentor').patch(userAuth,checkRole(['admin']),assignMentor);
 router.route('/assignBundle').patch(userAuth,checkRole(['admin']),assignBundle);
 router.route('/assignCourse').patch(userAuth,checkRole(['admin']),assignCourse);
 router.route('/:id').get(getCourseById).patch(userAuth,updateCourse).delete(checkRole(['admin']),deleteCourse);

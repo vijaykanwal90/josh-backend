@@ -11,7 +11,7 @@ import testimonialRouter from './routes/testimonial.router.js'
 import blogrouter from './routes/blog.router.js'
 import cors from 'cors'
 import studentTestimonialRouter from "./routes/studentTestimonial.router.js";
-
+import mentorrouter from './routes/mentor.router.js'
 const app = express();
 const URL = process.env.FRONTEND_URL;
 // console.log(URL)
@@ -37,7 +37,7 @@ app.use('/api/v1/video', videorouter);
 app.use('/api/v1/wallet',walletrouter);
 app.use('/api/v1/discount',discountrouter);
 app.use('/api/v1/blog', blogrouter);
-
+app.use("/api/v1/mentors", mentorrouter);
 app.use("/api/v1/testimonials", testimonialRouter);
 app.use("/api/v1/studenttestimonials", studentTestimonialRouter);
 app.use('/api/v1/popup',popuprouter);

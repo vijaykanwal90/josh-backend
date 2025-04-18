@@ -3,6 +3,7 @@ import { asynchHandler } from "../utils/AsynchHandler.js";
 import { Course } from "../models/course.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
+import { Mentor } from "../models/mentor.model.js";
 // import { uploadCloudinary } from "../utils/Cloudinary.js";
 import { Bundle } from "../models/bundle.model.js";
 
@@ -136,8 +137,8 @@ const createCourse = asynchHandler(async (req, res) => {
 
 const addVideos = asynchHandler(async (req, res) => {
     const { courseId } = req.params;
-    const { video  } = req.body;
-    console.log(video)
+    const { videos  } = req.body;
+    console.log(videos)
     try {
         const course = await Course.findById(courseId);
         if (!course) {
@@ -146,7 +147,7 @@ const addVideos = asynchHandler(async (req, res) => {
         console.log("adding videos ")
         const isCourseEmpty = course.videos.length === 0;
 
-        const newVideos = video.map((video, index) => ({
+        const newVideos = videos.map((video, index) => ({
             title: video.title,
             url: convertToEmbedUrl(video.url),
             isPreview: isCourseEmpty && index === 0 || video.isPreview || false
@@ -314,13 +315,51 @@ const getAllBundles = asynchHandler(async (req, res) => {
 // Fetch all courses
 const getCourses = asynchHandler(async (req, res) => {
     try {
-        const courses = await Course.find();
-        return res.status(200).json(new ApiResponse(200, { courses }, "Courses fetched successfully"));
+      const courses = await Course.find()
+        .populate("mentor")  // Populating mentor
+        .populate("students");  // Populating enrolled users
+  
+      return res.status(200).json(
+        new ApiResponse(200, { courses }, "Courses fetched successfully")
+      );
     } catch (error) {
-        console.error(error);
-        throw new ApiError(500, "Internal server error");
+      console.error(error);
+      throw new ApiError(500, "Internal server error");
     }
-});
+  });
+  
+  const assignMentor = asynchHandler(async (req, res) => {
+    const { courseId, mentorId } = req.body;
+  
+    try {
+      const course = await Course.findById(courseId);
+      if (!course) {
+        throw new ApiError(404, "Course not found");
+      }
+    
+      // Check if mentor exists
+      const mentor = await Mentor.findById(mentorId);
+      if (!mentor) {
+        throw new ApiError(404, "Mentor not found");
+      }
+  
+      // Check if the same mentor is already assigned
+      if (course.mentor?.toString() === mentorId) {
+        throw new ApiError(400, "Mentor already assigned to this course");
+      }
+  
+      course.mentor = mentorId; // assign mentor
+      await course.save();
+  
+      return res
+        .status(200)
+        .json(new ApiResponse(200, { course }, "Mentor assigned successfully"));
+    } catch (error) {
+      console.error(error);
+      throw new ApiError(500, "Internal server error", error);
+    }
+  });
+  
 
 // Fetch a course by its ID
 const getCourseById = asynchHandler(async (req, res) => {
@@ -520,6 +559,7 @@ export {
     assignBundle,
     getCourseByName,
     getBundleByName,
+    assignMentor,
     addVideos
 };
 function convertToEmbedUrl(url) {

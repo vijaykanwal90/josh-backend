@@ -16,8 +16,10 @@ const courseSchema = new mongoose.Schema({
     },
     category: {
       type: String,
+  },
+    courseIntrovideo:{
+      type: String,
     },
-  
     // 👇 Multiple videos with preview flag
     videos: [
       {
@@ -69,6 +71,15 @@ const courseSchema = new mongoose.Schema({
     whoShouldEnroll: [{
         type: String
         }],
+        stillConfused: [{
+          type: String
+          }],
+          reasonWhyJoshGuru: [{
+            type: String
+            }],
+      HowWillHelpYou:{
+        type: String
+      },
     isTrending: {
       type: Boolean,
       default: false
