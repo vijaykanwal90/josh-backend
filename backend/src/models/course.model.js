@@ -11,9 +11,7 @@ const courseSchema = new mongoose.Schema({
     bundleName: {
       type: String,
     },
-    courseMentorName: {
-      type: String,
-    },
+   
     category: {
       type: String,
   },
@@ -59,24 +57,26 @@ const courseSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Mentor'
       }],
+      whatYouWillLearn: [{
+        type: String
+        }],
     whyCourse: [{
       type: String
     }],
-    whatYouWillLearn: [{
+    whoShouldEnroll: [{
+      type: String
+      }],
+      stillConfused: [{
         type: String
         }],
+        reasonWhyJoshGuru: [{
+          type: String
+          }],
     courseHighlights: [{
         type: String
         }],
-    whoShouldEnroll: [{
-        type: String
-        }],
-        stillConfused: [{
-          type: String
-          }],
-          reasonWhyJoshGuru: [{
-            type: String
-            }],
+    
+      
       HowWillHelpYou:{
         type: String
       },
@@ -84,6 +84,11 @@ const courseSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     },
+    isOffline:{
+      type: Boolean,
+      default: false
+    }
+    
   
   }, {
     timestamps: true

@@ -46,7 +46,7 @@ const bundleSchema = new mongoose.Schema({
         default: false
     },
    
-});
+},{ timestamps: true });
 
 // module.exports = mongoose.model('Bundle', bundleSchema);
 export const Bundle = mongoose.model('Bundle', bundleSchema);

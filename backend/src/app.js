@@ -9,6 +9,7 @@ import discountrouter from './routes/discount.route.js'
 import popuprouter from './routes/popup.router.js'
 import testimonialRouter from './routes/testimonial.router.js'
 import blogrouter from './routes/blog.router.js'
+import bundlerouter from './routes/bundle.router.js'
 import cors from 'cors'
 import studentTestimonialRouter from "./routes/studentTestimonial.router.js";
 import mentorrouter from './routes/mentor.router.js'
@@ -32,6 +33,7 @@ app.use(express.static("public"));
 
 app.use('/api/v1/auth', authrouter);
 app.use('/api/v1/user', userrouter);
+app.use('/api/v1/bundle', bundlerouter);
 app.use('/api/v1/course', courserouter);
 app.use('/api/v1/video', videorouter);
 app.use('/api/v1/wallet',walletrouter);
