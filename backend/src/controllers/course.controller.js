@@ -269,7 +269,7 @@ const getCourseById = asynchHandler(async (req, res) => {
 
 
 // Fetch courses associated with a specific user
-const getUserCourses = asynchHandler(async (req, res) => {
+const getMentorCourses = asynchHandler(async (req, res) => {
     const { userId } = req.params;
 
     try {
@@ -378,7 +378,7 @@ export {
     createCourse,
     getCourses,
     getCourseById,
-    getUserCourses,
+    getMentorCourses,
     updateCourse,
     deleteCourse,
     

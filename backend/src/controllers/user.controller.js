@@ -17,7 +17,8 @@ const getUser = asynchHandler(async (req, res) => {
     }
 }
 );
-
+const getUserCourses = asynchHandler(async (req, res) => {
+});
 
 const updateUser = asynchHandler(async (req, res) => {
     try {
@@ -61,4 +62,4 @@ const getAllUser = asynchHandler(async(req,res)=>{
     }
 })
 
-export { updateUser, getUser,getAllUser };
+export { updateUser, getUser,getAllUser ,getUserCourses};

@@ -7,7 +7,7 @@ import {
   createCourse,
   getCourses,
   getCourseById,
-  getUserCourses,
+  getMentorCourses,
   updateCourse,
   deleteCourse,
   assignCourse,
@@ -42,7 +42,7 @@ router
   .get(getCourseById)
   .patch(userAuth, checkRole(["admin"]), updateCourse)
   .delete(checkRole(["admin"]), deleteCourse);
-router.route("/:userId").get(getUserCourses);
+router.route("/:userId").get(getMentorCourses);
 
 router.route("/").get(getCourses);
 
