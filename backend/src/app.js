@@ -13,6 +13,10 @@ import bundlerouter from './routes/bundle.router.js'
 import cors from 'cors'
 import studentTestimonialRouter from "./routes/studentTestimonial.router.js";
 import mentorrouter from './routes/mentor.router.js'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { dirname } from 'path';
+
 const app = express();
 const URL = process.env.FRONTEND_URL;
 // console.log(URL)
@@ -26,10 +30,17 @@ const corsOptions = {
 
 
 }
+
 app.use(cors(corsOptions))
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
+// In your Express backend
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use("/files", express.static(path.join(__dirname, "filesStore")));
+
+
 
 app.use('/api/v1/auth', authrouter);
 app.use('/api/v1/user', userrouter);

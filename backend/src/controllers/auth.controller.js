@@ -89,7 +89,7 @@ const loginUser = asynchHandler(async (req, res) => {
     try {
         email = email.toLowerCase();
        
-        console.log("in logged route")
+        console.log("in logged in route")
         const user = await User
             .findOne({ email })
             .select("+password")
