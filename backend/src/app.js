@@ -38,7 +38,8 @@ app.use(express.static("public"));
 // In your Express backend
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-app.use("/files", express.static(path.join(__dirname, "filesStore")));
+app.use("/files", express.static(path.join(__dirname, "../../josh-web/client/public/fileStore")));
+
 
 
 

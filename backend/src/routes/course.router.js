@@ -51,7 +51,13 @@ router
 router
   .route("/:id")
   .get(getCourseById)
-  .patch(userAuth, checkRole(["admin"]), updateCourse)
+  .patch(userAuth, checkRole(["admin"]), upload.fields([
+    
+      { name: "pdfFile", maxCount: 1 },
+      { name: "certificateFile", maxCount: 1 },
+      { name: "imageFile", maxCount: 1 }
+    
+  ]), updateCourse)
   .delete(checkRole(["admin"]), deleteCourse);
 router.route("/:userId").get(getMentorCourses);
 

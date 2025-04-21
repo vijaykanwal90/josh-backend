@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Define the upload directory path
-const uploadPath = path.join(__dirname, "../../../..", "filesStore");
+const uploadPath = path.join(__dirname, "../../../..", "josh-web/client/public/fileStore");
 
 // Ensure that the directory exists (create it if it doesn't exist)
 if (!fs.existsSync(uploadPath)) {
@@ -43,17 +43,17 @@ const fileFilter = (req, file, cb) => {
 export const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 }, // Limit file size to 10MB (optional)
+  limits: { fileSize: 20 * 1024 * 1024 }, // Limit file size to 10MB (optional)
 });
 
 // Error handling middleware for file upload errors
 export const handleMulterError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     // Handle multer-specific errors (e.g., file size too large)
-    return res.status(400).json({ message: `Multer error: ${err.message}` });
+    return res.status(400).json({ message: ` here is the muler eror Multer error: ${err.message}` });
   } else if (err) {
     // Handle custom file filter errors
-    return res.status(400).json({ message: `File upload error: ${err.message}` });
+    return res.status(400).json({ message: `File upload error occured: ${err.message}` });
   }
   next(); // Proceed if no error
 };

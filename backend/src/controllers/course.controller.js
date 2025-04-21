@@ -8,7 +8,6 @@ import { Mentor } from "../models/mentor.model.js";
 // import { uploadCloudinary } from "../utils/Cloudinary.js";
 import { Bundle } from "../models/bundle.model.js";
 
-
 // Create a course and link it to a bundle
 // const createCourse = asynchHandler(async (req, res) => {
 //     const {
@@ -151,96 +150,121 @@ import { Bundle } from "../models/bundle.model.js";
 //   }
 // });
 const createCourse = asynchHandler(async (req, res) => {
-    try {
-      const {
-        title,
-        
-        bundleName,
-        category,
-        description,
-        price,
-        duration,
-        courseMentorName,
-        whyCourse,
-        whatYouWillLearn,
-        courseHighlights,
-        whoShouldEnroll,
-        isTrending,
-        isOffline,
-      } = req.body;
-      console.log("create course")
-      // Parse videos if sent as JSON string
-      let videos = [];
-      if (req.body.videos) {
-        try {
-          videos = JSON.parse(req.body.videos);
-        } catch (e) {
-          return res.status(400).json({ message: "Invalid videos format" });
-        }
-      }
-  
-      // Find or create bundle
-      let bundle = await Bundle.findOne({ bundleName });
-  
-      // Format videos and mark first as preview
-      const formattedVideos = videos.map((video, index) => ({
-        title: video.title,
-        url: convertToEmbedUrl(video.url),
-        isPreview: index === 0 ? true : video.isPreview || false,
-      }));
-  
-      // Handle file uploads (path will be saved)
-      const imageFile = req.files?.imageFile?.[0];
-      const localImagePath = imageFile ? `${req.protocol}://${req.get('host')}/files/${imageFile.filename}` : null;
-      const pdfFile = req.files?.pdfFile?.[0];
+  try {
+    const {
+      title,
+      bundleName,
+      category,
+      description,
+      price,
+      duration,
+      courseMentorName,
+      whyCourse,
+      whatYouWillLearn,
+      courseHighlights,
+      whoShouldEnroll,
+      isTrending,
+      isOffline,
+    } = req.body;
 
-      const localPdfPath = pdfFile ? `${req.protocol}://${req.get('host')}/files/${pdfFile.filename}` : null;
-      const certificateFile = req.files?.certificateFile?.[0];
-      const localCertificatePath = certificateFile ? `${req.protocol}://${req.get('host')}/files/${certificateFile.filename}` : null;
-  
-      const course = new Course({
-        title,
-        image: localImagePath,
-        bundleName,
-        description,
-        category,
-        price: Number(price),
-        duration: Number(duration),
-        bundle: bundle ? bundle._id : null,
-        courseMentorName,
-        videos: formattedVideos,
-        whyCourse,
-        whatYouWillLearn,
-        courseHighlights,
-        whoShouldEnroll,
-        isTrending: isTrending === "true", // comes as string from form-data
-        isOffline: isOffline === "true",
-        pdfPath: localPdfPath,
-        certificatePath: localCertificatePath,
-      });
-  
-      await course.save();
-  
-      if (bundle) {
-        bundle.courses.push(course._id);
-        await bundle.save();
+    console.log("Creating course...");
+
+    // Parse videos if sent as JSON string
+    let videos = [];
+    if (req.body.videos) {
+      try {
+        console.log("Parsing videos...");
+        const parsed = JSON.parse(req.body.videos);
+        if (Array.isArray(parsed)) {
+          videos = parsed;
+        } else {
+          console.warn("Videos field is not an array.");
+        }
+      } catch (e) {
+        console.warn("Invalid videos format. Proceeding without videos.");
       }
-  
-      console.log("Course created");
-  
-      return res.status(201).json(
+    }
+
+    // Find or create bundle if bundleName is provided
+    let bundle = null;
+    if (bundleName) {
+      bundle = await Bundle.findOne({ bundleName });
+      if (!bundle) {
+        bundle = new Bundle({ bundleName });
+        await bundle.save();
+        console.log("New bundle created:", bundleName);
+      }
+    }
+
+    // Format videos and mark first as preview
+    const formattedVideos = videos.map((video, index) => ({
+      title: video.title || `Video ${index + 1}`,
+      url: video.url ? convertToEmbedUrl(video.url) : "",
+      isPreview: index === 0 ? true : video.isPreview || false,
+    }));
+
+    // Handle file uploads
+    const imageFile = req.files?.imageFile?.[0];
+    const localImagePath = imageFile
+      ? `/fileStore/${imageFile.filename}`
+      : null;
+
+    const pdfFile = req.files?.pdfFile?.[0];
+    const localPdfPath = pdfFile ? `/fileStore/${pdfFile.filename}` : null;
+
+    const certificateFile = req.files?.certificateFile?.[0];
+    const localCertificatePath = certificateFile
+      ? `/fileStore/${certificateFile.filename}`
+      : null;
+
+    // Create course
+    const course = new Course({
+      title,
+      image: localImagePath,
+      bundleName,
+      description,
+      category,
+      price: Number(price),
+      duration: Number(duration),
+      bundle: bundle ? bundle._id : null,
+      courseMentorName,
+      videos: formattedVideos,
+      whyCourse,
+      whatYouWillLearn,
+      courseHighlights,
+      whoShouldEnroll,
+      isTrending: isTrending === "true",
+      isOffline: isOffline === "true",
+      pdfPath: localPdfPath,
+      certificatePath: localCertificatePath,
+    });
+
+    console.log("Saving course...");
+    await course.save();
+
+    // Associate course with bundle
+    if (bundle) {
+      bundle.courses.push(course._id);
+      await bundle.save();
+    }
+
+    console.log("Course created successfully");
+
+    return res
+      .status(201)
+      .json(
         new ApiResponse(
           201,
           { course },
           "Course created with videos and files successfully"
         )
       );
-    } catch (error) {
-      console.error(error);
-      throw new ApiError(500, "Internal server error", error);
-    }
-  });
-  
+  } catch (error) {
+    console.error("Error creating course:", error);
+    throw new ApiError(500, "Internal server error", error);
+  }
+});
+
 const addVideos = asynchHandler(async (req, res) => {
   const { courseId } = req.params;
   const { videos } = req.body;
@@ -388,11 +412,68 @@ const getMentorCourses = asynchHandler(async (req, res) => {
 });
 
 // Update a course by its ID
+// const updateCourse = asynchHandler(async (req, res) => {
+//   const { id } = req.params;
+//   console.log("on updating course");
+//   try {
+//     console.log(req.body)
+//     const course = await Course.findByIdAndUpdate(id, req.body, {
+//       new: true,
+//       runValidators: true,
+//     });
+
+//     if (!course) {
+//       throw new ApiError(404, "Course not found");
+//     }
+
+//     return res
+//       .status(200)
+//       .json(new ApiResponse(200, { course }, "Course updated successfully"));
+//   } catch (error) {
+//     console.error(error);
+//     throw new ApiError(500, "Internal server error");
+//   }
+// });
 const updateCourse = asynchHandler(async (req, res) => {
   const { id } = req.params;
-  console.log("updateing course");
+  console.log("on updating course");
+  console.log(req.body);
   try {
-    const course = await Course.findByIdAndUpdate(id, req.body, {
+    const updatedFields = { ...req.body };
+
+    // Attach file paths if they exist
+    // console.log(req.files.imageFile?[0].path)
+    // console.log(req.files.imageFile[0]);
+    // Destructure files safely
+    const imageFile = req.files?.imageFile?.[0];
+    const pdfFile = req.files?.pdfFile?.[0];
+    const certificateFile = req.files?.certificateFile?.[0];
+
+    // Generate local paths
+    const localImagePath = imageFile
+      ? `/fileStore/${imageFile.filename}`
+      : null;
+    const localPdfPath = pdfFile ? `/fileStore/${pdfFile.filename}` : null;
+    const localCertificatePath = certificateFile
+      ? `/fileStore/${certificateFile.filename}`
+      : null;
+
+    // Update the fields only if files are present
+    // const updatedFields = {};
+
+    if (localImagePath) {
+      updatedFields.image = localImagePath;
+    }
+
+    if (localPdfPath) {
+      updatedFields.pdfPath = localPdfPath;
+    }
+
+    if (localCertificatePath) {
+      updatedFields.certificatePath = localCertificatePath;
+    }
+
+    const course = await Course.findByIdAndUpdate(id, updatedFields, {
       new: true,
       runValidators: true,
     });
