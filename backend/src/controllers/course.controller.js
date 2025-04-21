@@ -436,60 +436,82 @@ const getMentorCourses = asynchHandler(async (req, res) => {
 // });
 const updateCourse = asynchHandler(async (req, res) => {
   const { id } = req.params;
-  console.log("on updating course");
-  console.log(req.body);
+  console.log("Updating course with ID:", id);
+  console.log("Incoming body:", req.body);
+
   try {
     const updatedFields = { ...req.body };
 
-    // Attach file paths if they exist
-    // console.log(req.files.imageFile?[0].path)
-    // console.log(req.files.imageFile[0]);
-    // Destructure files safely
+    // ✅ Safely parse `videos` JSON string if needed
+    if (typeof req.body.videos === "string") {
+      try {
+        updatedFields.videos = JSON.parse(req.body.videos);
+
+        // Optional: validate video objects
+        const isValidVideos = Array.isArray(updatedFields.videos) &&
+          updatedFields.videos.every(
+            (v) =>
+              v &&
+              typeof v === "object" &&
+              typeof v.title === "string" &&
+              typeof v.url === "string"
+          );
+
+        if (!isValidVideos) {
+          return res.status(400).json({
+            error:
+              "'videos' must be a valid JSON array of objects with 'title' and 'url'.",
+          });
+        }
+      } catch (err) {
+        return res.status(400).json({
+          error:
+            "Invalid JSON format for 'videos'. It should be a valid array of objects.",
+        });
+      }
+    }
+
+    // ✅ Safely destructure uploaded files
     const imageFile = req.files?.imageFile?.[0];
     const pdfFile = req.files?.pdfFile?.[0];
     const certificateFile = req.files?.certificateFile?.[0];
 
-    // Generate local paths
-    const localImagePath = imageFile
-      ? `/fileStore/${imageFile.filename}`
-      : null;
-    const localPdfPath = pdfFile ? `/fileStore/${pdfFile.filename}` : null;
-    const localCertificatePath = certificateFile
-      ? `/fileStore/${certificateFile.filename}`
-      : null;
-
-    // Update the fields only if files are present
-    // const updatedFields = {};
-
-    if (localImagePath) {
-      updatedFields.image = localImagePath;
+    // ✅ Assign file paths if present
+    if (imageFile) {
+      updatedFields.image = `/fileStore/${imageFile.filename}`;
     }
 
-    if (localPdfPath) {
-      updatedFields.pdfPath = localPdfPath;
+    if (pdfFile) {
+      updatedFields.pdfPath = `/fileStore/${pdfFile.filename}`;
     }
 
-    if (localCertificatePath) {
-      updatedFields.certificatePath = localCertificatePath;
+    if (certificateFile) {
+      updatedFields.certificatePath = `/fileStore/${certificateFile.filename}`;
     }
 
+    // ✅ Proceed to update
     const course = await Course.findByIdAndUpdate(id, updatedFields, {
       new: true,
       runValidators: true,
     });
 
     if (!course) {
-      throw new ApiError(404, "Course not found");
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Course not found"));
     }
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, { course }, "Course updated successfully"));
+    return res.status(200).json(
+      new ApiResponse(200, { course }, "Course updated successfully")
+    );
   } catch (error) {
-    console.error(error);
-    throw new ApiError(500, "Internal server error");
+    console.error("Update Course Error:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Internal server error"));
   }
 });
+
 
 // Delete a course by its ID
 const deleteCourse = asynchHandler(async (req, res) => {
