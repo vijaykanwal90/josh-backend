@@ -442,18 +442,35 @@ const updateCourse = asynchHandler(async (req, res) => {
   try {
     const updatedFields = { ...req.body };
 
-    // ✅ Only parse videos if it's present
+    // ✅ Only parse 'videos' if it's present and a string
     if (req.body.videos !== undefined) {
+      // If it's a string, try to parse it into an array of objects
       if (typeof req.body.videos === "string") {
         try {
-          updatedFields.videos = JSON.parse(req.body.videos);
+          // Ensure the videos field is a valid array of objects
+          const parsedVideos = JSON.parse(req.body.videos);
+
+          if (Array.isArray(parsedVideos)) {
+            updatedFields.videos = parsedVideos;
+          } else {
+            return res.status(400).json({
+              error: "'videos' should be an array of objects, but got something else.",
+            });
+          }
         } catch (err) {
           return res.status(400).json({
             error: "Invalid JSON format for 'videos'. It should be a valid array of objects.",
           });
         }
+      } else if (Array.isArray(req.body.videos)) {
+        // If it's already an array, we don't need to parse it
+        updatedFields.videos = req.body.videos;
+      } else {
+        // If 'videos' is neither an array nor a valid JSON string, return an error
+        return res.status(400).json({
+          error: "'videos' must be either an array or a valid JSON string representation of an array.",
+        });
       }
-      // else: it's already an array of objects – do nothing
     }
 
     // ✅ Attach file paths only if present
