@@ -109,6 +109,7 @@ const courseSchema = new mongoose.Schema(
     },
     certificatePath:{
       type: String,
+      default:"/fileStore/certificate.png"
     }
   },
   {
