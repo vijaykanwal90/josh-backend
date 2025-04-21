@@ -7,7 +7,7 @@ import { User } from "../models/user.model.js";
 import { Mentor } from "../models/mentor.model.js";
 // import { uploadCloudinary } from "../utils/Cloudinary.js";
 import { Bundle } from "../models/bundle.model.js";
-
+import mongoose from "mongoose";
 // Create a course and link it to a bundle
 // const createCourse = asynchHandler(async (req, res) => {
 //     const {
@@ -434,61 +434,172 @@ const getMentorCourses = asynchHandler(async (req, res) => {
 //     throw new ApiError(500, "Internal server error");
 //   }
 // });
+// const updateCourse = asynchHandler(async (req, res) => {
+//   const { id } = req.params;
+//   console.log("on updating course");
+//   console.log(req.body);
+
+//   try {
+//     const updatedFields = { ...req.body };
+
+//     // ✅ Only parse 'videos' if it's present and a string
+//     if (req.body.videos !== undefined) {
+//       // If it's a string, try to parse it into an array of objects
+//       if (typeof req.body.videos === "string") {
+//         try {
+//           // Ensure the videos field is a valid array of objects
+//           const parsedVideos = JSON.parse(req.body.videos);
+
+//           if (Array.isArray(parsedVideos)) {
+//             updatedFields.videos = parsedVideos;
+//           } else {
+//             return res.status(400).json({
+//               error: "'videos' should be an array of objects, but got something else.",
+//             });
+//           }
+//         } catch (err) {
+//           return res.status(400).json({
+//             error: "Invalid JSON format for 'videos'. It should be a valid array of objects.",
+//           });
+//         }
+//       } else if (Array.isArray(req.body.videos)) {
+//         // If it's already an array, we don't need to parse it
+//         updatedFields.videos = req.body.videos;
+//       } else {
+//         // If 'videos' is neither an array nor a valid JSON string, return an error
+//         return res.status(400).json({
+//           error: "'videos' must be either an array or a valid JSON string representation of an array.",
+//         });
+//       }
+//     }
+
+//     // ✅ Attach file paths only if present
+//     const imageFile = req.files?.imageFile?.[0];
+//     const pdfFile = req.files?.pdfFile?.[0];
+//     const certificateFile = req.files?.certificateFile?.[0];
+
+//     if (imageFile) {
+//       updatedFields.image = `/fileStore/${imageFile.filename}`;
+//     }
+
+//     if (pdfFile) {
+//       updatedFields.pdfPath = `/fileStore/${pdfFile.filename}`;
+//     }
+
+//     if (certificateFile) {
+//       updatedFields.certificatePath = `/fileStore/${certificateFile.filename}`;
+//     }
+
+//     const course = await Course.findByIdAndUpdate(id, updatedFields, {
+//       new: true,
+//       runValidators: true,
+//     });
+
+//     if (!course) {
+//       throw new ApiError(404, "Course not found");
+//     }
+
+//     return res
+//       .status(200)
+//       .json(new ApiResponse(200, { course }, "Course updated successfully"));
+//   } catch (error) {
+//     console.error(error);
+//     throw new ApiError(500, "Internal server error");
+//   }
+// });
+
 const updateCourse = asynchHandler(async (req, res) => {
   const { id } = req.params;
-  console.log("on updating course");
-  console.log(req.body);
-
+  
   try {
+    // Validate the ID format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json(
+        new ApiResponse(400, null, "Invalid course ID format")
+      );
+    }
+
     const updatedFields = { ...req.body };
-
-    // ✅ Only parse 'videos' if it's present and a string
+    
+    // Process videos array
     if (req.body.videos !== undefined) {
-      // If it's a string, try to parse it into an array of objects
-      if (typeof req.body.videos === "string") {
-        try {
-          // Ensure the videos field is a valid array of objects
-          const parsedVideos = JSON.parse(req.body.videos);
-
-          if (Array.isArray(parsedVideos)) {
+      try {
+        let parsedVideos;
+        
+        if (typeof req.body.videos === "string") {
+          parsedVideos = JSON.parse(req.body.videos);
+        } else {
+          parsedVideos = req.body.videos;
+        }
+        
+        if (Array.isArray(parsedVideos)) {
+          // Validate videos structure
+          const validVideos = parsedVideos.every(video => 
+            typeof video === 'object' && 
+            'title' in video && 
+            'url' in video
+          );
+          
+          if (validVideos) {
             updatedFields.videos = parsedVideos;
           } else {
-            return res.status(400).json({
-              error: "'videos' should be an array of objects, but got something else.",
-            });
+            return res.status(400).json(
+              new ApiResponse(400, null, "Videos must contain title and url properties")
+            );
           }
-        } catch (err) {
-          return res.status(400).json({
-            error: "Invalid JSON format for 'videos'. It should be a valid array of objects.",
-          });
+        } else {
+          return res.status(400).json(
+            new ApiResponse(400, null, "Videos must be an array")
+          );
         }
-      } else if (Array.isArray(req.body.videos)) {
-        // If it's already an array, we don't need to parse it
-        updatedFields.videos = req.body.videos;
-      } else {
-        // If 'videos' is neither an array nor a valid JSON string, return an error
-        return res.status(400).json({
-          error: "'videos' must be either an array or a valid JSON string representation of an array.",
-        });
+      } catch (err) {
+        return res.status(400).json(
+          new ApiResponse(400, null, "Invalid JSON format for videos")
+        );
       }
     }
-
-    // ✅ Attach file paths only if present
-    const imageFile = req.files?.imageFile?.[0];
-    const pdfFile = req.files?.pdfFile?.[0];
-    const certificateFile = req.files?.certificateFile?.[0];
-
-    if (imageFile) {
-      updatedFields.image = `/fileStore/${imageFile.filename}`;
-    }
-
-    if (pdfFile) {
-      updatedFields.pdfPath = `/fileStore/${pdfFile.filename}`;
-    }
-
-    if (certificateFile) {
-      updatedFields.certificatePath = `/fileStore/${certificateFile.filename}`;
-    }
+    
+    // Handle file uploads with sanitized filenames
+    ['imageFile', 'pdfFile', 'certificateFile'].forEach(fileType => {
+      const file = req.files?.[fileType]?.[0];
+      if (file) {
+        const fieldName = fileType === 'imageFile' ? 'image' : 
+                          fileType === 'pdfFile' ? 'pdfPath' : 'certificatePath';
+        
+        updatedFields[fieldName] = `/fileStore/${file.filename}`;
+      }
+    });
+    
+    // Process arrays that might come as strings
+    ['whatYouWillLearn', 'whyCourse', 'whoShouldEnroll', 'stillConfused', 
+     'reasonWhyJoshGuru', 'courseHighlights'].forEach(arrayField => {
+      if (req.body[arrayField]) {
+        try {
+          if (typeof req.body[arrayField] === 'string') {
+            updatedFields[arrayField] = JSON.parse(req.body[arrayField]);
+          }
+          
+          if (!Array.isArray(updatedFields[arrayField])) {
+            return res.status(400).json(
+              new ApiResponse(400, null, `${arrayField} must be an array`)
+            );
+          }
+        } catch (err) {
+          return res.status(400).json(
+            new ApiResponse(400, null, `Invalid JSON format for ${arrayField}`)
+          );
+        }
+      }
+    });
+    
+    // Handle boolean fields
+    ['isTrending', 'isOffline'].forEach(boolField => {
+      if (req.body[boolField] !== undefined) {
+        if (typeof req.body[boolField] === 'string') {
+          updatedFields[boolField] = req.body[boolField].toLowerCase() === 'true';
+        }
+      }
+    });
 
     const course = await Course.findByIdAndUpdate(id, updatedFields, {
       new: true,
@@ -496,19 +607,21 @@ const updateCourse = asynchHandler(async (req, res) => {
     });
 
     if (!course) {
-      throw new ApiError(404, "Course not found");
+      return res.status(404).json(
+        new ApiResponse(404, null, "Course not found")
+      );
     }
 
     return res
       .status(200)
       .json(new ApiResponse(200, { course }, "Course updated successfully"));
   } catch (error) {
-    console.error(error);
-    throw new ApiError(500, "Internal server error");
+    console.error("Error updating course:", error);
+    return res.status(500).json(
+      new ApiResponse(500, null, "Internal server error")
+    );
   }
 });
-
-
 
 // Delete a course by its ID
 const deleteCourse = asynchHandler(async (req, res) => {
