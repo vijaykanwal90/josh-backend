@@ -510,93 +510,117 @@ const getMentorCourses = asynchHandler(async (req, res) => {
 
 const updateCourse = asynchHandler(async (req, res) => {
   const { id } = req.params;
-  
+
   try {
     // Validate the ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json(
-        new ApiResponse(400, null, "Invalid course ID format")
-      );
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Invalid course ID format"));
     }
 
     const updatedFields = { ...req.body };
-    
+
     // Process videos array
     if (req.body.videos !== undefined) {
       try {
         let parsedVideos;
-        
+
         if (typeof req.body.videos === "string") {
           parsedVideos = JSON.parse(req.body.videos);
         } else {
           parsedVideos = req.body.videos;
         }
-        
+
         if (Array.isArray(parsedVideos)) {
           // Validate videos structure
-          const validVideos = parsedVideos.every(video => 
-            typeof video === 'object' && 
-            'title' in video && 
-            'url' in video
+          const validVideos = parsedVideos.every(
+            (video) =>
+              typeof video === "object" && "title" in video && "url" in video
           );
-          
+
           if (validVideos) {
             updatedFields.videos = parsedVideos;
           } else {
-            return res.status(400).json(
-              new ApiResponse(400, null, "Videos must contain title and url properties")
-            );
+            return res
+              .status(400)
+              .json(
+                new ApiResponse(
+                  400,
+                  null,
+                  "Videos must contain title and url properties"
+                )
+              );
           }
         } else {
-          return res.status(400).json(
-            new ApiResponse(400, null, "Videos must be an array")
-          );
+          return res
+            .status(400)
+            .json(new ApiResponse(400, null, "Videos must be an array"));
         }
       } catch (err) {
-        return res.status(400).json(
-          new ApiResponse(400, null, "Invalid JSON format for videos")
-        );
+        return res
+          .status(400)
+          .json(new ApiResponse(400, null, "Invalid JSON format for videos"));
       }
     }
-    
+
     // Handle file uploads with sanitized filenames
-    ['imageFile', 'pdfFile', 'certificateFile'].forEach(fileType => {
+    ["imageFile", "pdfFile", "certificateFile"].forEach((fileType) => {
       const file = req.files?.[fileType]?.[0];
       if (file) {
-        const fieldName = fileType === 'imageFile' ? 'image' : 
-                          fileType === 'pdfFile' ? 'pdfPath' : 'certificatePath';
-        
+        const fieldName =
+          fileType === "imageFile"
+            ? "image"
+            : fileType === "pdfFile"
+            ? "pdfPath"
+            : "certificatePath";
+
         updatedFields[fieldName] = `/fileStore/${file.filename}`;
       }
     });
-    
+
     // Process arrays that might come as strings
-    ['whatYouWillLearn', 'whyCourse', 'whoShouldEnroll', 'stillConfused', 
-     'reasonWhyJoshGuru', 'courseHighlights'].forEach(arrayField => {
+    [
+      "whatYouWillLearn",
+      "whyCourse",
+      "whoShouldEnroll",
+      "stillConfused",
+      "reasonWhyJoshGuru",
+      "courseHighlights",
+    ].forEach((arrayField) => {
       if (req.body[arrayField]) {
         try {
-          if (typeof req.body[arrayField] === 'string') {
+          if (typeof req.body[arrayField] === "string") {
             updatedFields[arrayField] = JSON.parse(req.body[arrayField]);
           }
-          
+
           if (!Array.isArray(updatedFields[arrayField])) {
-            return res.status(400).json(
-              new ApiResponse(400, null, `${arrayField} must be an array`)
-            );
+            return res
+              .status(400)
+              .json(
+                new ApiResponse(400, null, `${arrayField} must be an array`)
+              );
           }
         } catch (err) {
-          return res.status(400).json(
-            new ApiResponse(400, null, `Invalid JSON format for ${arrayField}`)
-          );
+          return res
+            .status(400)
+            .json(
+              new ApiResponse(
+                400,
+                null,
+                `Invalid JSON format for ${arrayField}`
+              )
+            );
         }
       }
     });
-    
+
     // Handle boolean fields
-    ['isTrending', 'isOffline'].forEach(boolField => {
+    ["isTrending", "isOffline"].forEach((boolField) => {
       if (req.body[boolField] !== undefined) {
-        if (typeof req.body[boolField] === 'string') {
-          updatedFields[boolField] = req.body[boolField].toLowerCase() === 'true';
+        if (typeof req.body[boolField] === "string") {
+          updatedFields[boolField] =
+            req.body[boolField].toLowerCase() === "true";
         }
       }
     });
@@ -607,9 +631,9 @@ const updateCourse = asynchHandler(async (req, res) => {
     });
 
     if (!course) {
-      return res.status(404).json(
-        new ApiResponse(404, null, "Course not found")
-      );
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Course not found"));
     }
 
     return res
@@ -617,9 +641,9 @@ const updateCourse = asynchHandler(async (req, res) => {
       .json(new ApiResponse(200, { course }, "Course updated successfully"));
   } catch (error) {
     console.error("Error updating course:", error);
-    return res.status(500).json(
-      new ApiResponse(500, null, "Internal server error")
-    );
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Internal server error"));
   }
 });
 

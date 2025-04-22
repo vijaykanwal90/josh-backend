@@ -98,13 +98,18 @@ const loginUser = asynchHandler(async (req, res) => {
         if (!user || !(await user.verifyPassword(password))) {
             throw new ApiError(401, "Invalid credentials");
         }
-        const token = await user.getJWT();
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
-        });
+        // const token = await user.getJWT();
+        // res.cookie('token', token, {
+        //     httpOnly: true,
+        //     secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
+        // });
+        const token = JsonWebTokenError.sign(
+            {userId: user._id},
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }   
+        )
 
-        return res.status(200).json(new ApiResponse(200, { user }, "User logged in successfully"));
+        return res.status(200).json(new ApiResponse(200, { token,user }, "User logged in successfully"));
 
     } catch (error) {
         console.log(error);
@@ -115,7 +120,7 @@ const loginUser = asynchHandler(async (req, res) => {
 const logoutUser = (req, res) => {
     try {
         res.clearCookie('token');
-        return res.status(200).json(new ApiResponse(200, {}, "User logged out successfully"));
+    return res.status(200).json(new ApiResponse(200, {}, "User logged out successfully"));
     } catch (error) {
         console.log(error);
         throw new ApiError(500, "Internal server error");
