@@ -4,6 +4,8 @@ import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js"
 import bcrypt from 'bcryptjs';
 import { Wallet } from "../models/Wallet.model.js";
+// import { JsonWebToken } from "jsonwebtoken";
+
 const registerUser = asynchHandler(async (req, res) => {
     let { name, email, password, referralcode, mobilenumber } = req.body;
     try {
@@ -83,7 +85,6 @@ const registerUser = asynchHandler(async (req, res) => {
         throw new ApiError(500, "Internal server error");
     }
 });
-
 const loginUser = asynchHandler(async (req, res) => {
     let { email, password } = req.body;
     try {
@@ -98,16 +99,16 @@ const loginUser = asynchHandler(async (req, res) => {
         if (!user || !(await user.verifyPassword(password))) {
             throw new ApiError(401, "Invalid credentials");
         }
-        // const token = await user.getJWT();
-        // res.cookie('token', token, {
-        //     httpOnly: true,
-        //     secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
-        // });
-        const token = JsonWebTokenError.sign(
-            {userId: user._id},
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }   
-        )
+        const token = await user.getJWT();
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
+        });
+        // const token = JsonWebTokenError.sign(
+        //     {userId: user._id},
+        //     process.env.JWT_SECRET,
+        //     { expiresIn: '24h' }   
+        // )
 
         return res.status(200).json(new ApiResponse(200, { token,user }, "User logged in successfully"));
 
