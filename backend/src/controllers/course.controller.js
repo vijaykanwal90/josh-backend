@@ -8,7 +8,7 @@ import { Mentor } from "../models/mentor.model.js";
 // import { uploadCloudinary } from "../utils/Cloudinary.js";
 import { Bundle } from "../models/bundle.model.js";
 import mongoose from "mongoose";
-// Create a course and link it to a bundle
+// Create a course and link it to a bundles
 // const createCourse = asynchHandler(async (req, res) => {
 //     const {
 //         title,
