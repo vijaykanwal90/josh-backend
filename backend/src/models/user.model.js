@@ -47,19 +47,22 @@ const userSchema = new mongoose.Schema({
     total_income: {
         type: Number, default: 0
     },
-    today_income: {
-        type: Number, default: 0
-    },
-    last_7_days_income: {
-        type: Number, default: 0
-    },
-    last_30_days_income: {
-        type: Number, default: 0
-    },
-    incentive: {
-        type: Number,
-        default: 0
-    },
+    incomeHistory:[
+        {
+            amount:{
+                type: Number,
+                
+            },
+            date:{
+                type: Date,
+                default: Date.now
+            },
+            from:{
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User'
+            }
+        }
+    ],
     myTeam: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
