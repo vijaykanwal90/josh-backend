@@ -666,56 +666,134 @@ const deleteCourse = asynchHandler(async (req, res) => {
     throw new ApiError(500, "Internal server error");
   }
 });
+// const assignCourse = asynchHandler(async (req, res) => {
+//   const { courseId, studentId } = req.body;
+
+//   try {
+//     console.log(courseId);
+//     console.log(studentId);
+
+//     const course = await Course.findById(courseId);
+//     if (!course) {
+//       throw new ApiError(404, "Course not found");
+//     }
+
+//     // ✅ Update all videos to be previewable
+//     course.videos = course.videos.map((video) => ({
+//       ...video._doc,
+//       isPreview: true,
+//     }));
+
+//     // ✅ Avoid duplicate assignment
+//     if (course.students.includes(studentId)) {
+//       throw new ApiError(400, "User already assigned to course");
+//     }
+
+
+//     const user = await User.findById(studentId);
+//     if (!user) {
+//       throw new ApiError(404, "User not found");
+//     }
+ 
+//     if (user.courses.includes(courseId)) {
+//       throw new ApiError(400, "Course already assigned to user");
+//     }
+//     if(course.isTrending){
+
+    
+//     const oneLevelUser = await User.findOne({
+//       sharableReferralCode: user.referredByCode,
+//     });
+//     if(oneLevelUser){
+//       oneLevelUser.total_income += course.price * 0.1;
+//       oneLevelUser.incomeHistory.push({
+//         amount: course.price * 0.1,
+//         date: Date.now(),
+//         from: user._id,
+//       });
+//       oneLevelUser.totalTeam += 1;
+//       oneLevelUser.myTeam.push(user._id);
+//       oneLevelUser.incentive += course.price * 0.1;
+//       await oneLevelUser.save();
+//     }
+//   }
+//     course.students.push(studentId);
+//     user.courses.push(courseId);
+
+//     await course.save();
+//     await user.save();
+
+//     return res
+//       .status(200)
+//       .json(
+//         new ApiResponse(
+//           200,
+//           { course, user },
+//           "Course assigned and all videos unlocked (as previews)"
+//         )
+//       );
+//   } catch (error) {
+//     console.log(error);
+//     throw new ApiError(500, "Internal server error", error);
+//   }
+// });
 const assignCourse = asynchHandler(async (req, res) => {
   const { courseId, studentId } = req.body;
 
   try {
-    console.log(courseId);
-    console.log(studentId);
+    // ✅ Validate IDs
+    if (
+      !mongoose.Types.ObjectId.isValid(courseId) ||
+      !mongoose.Types.ObjectId.isValid(studentId)
+    ) {
+      throw new ApiError(400, "Invalid Course or Student ID");
+    }
 
-    const course = await Course.findById(courseId);
+    const course = await Course.findById({_id:courseId});
     if (!course) {
       throw new ApiError(404, "Course not found");
     }
 
-    // ✅ Update all videos to be previewable
-    course.videos = course.videos.map((video) => ({
-      ...video._doc,
-      isPreview: true,
-    }));
-
-    // ✅ Avoid duplicate assignment
-    if (course.students.includes(studentId)) {
-      throw new ApiError(400, "User already assigned to course");
-    }
-
-    course.students.push(studentId);
-
-    const user = await User.findById(studentId);
+    const user = await User.findById({_id:studentId});
     if (!user) {
       throw new ApiError(404, "User not found");
     }
 
+    // ✅ Prevent duplicate assignment
+    if (course.students.includes(studentId)) {
+      throw new ApiError(400, "User already assigned to course");
+    }
     if (user.courses.includes(courseId)) {
       throw new ApiError(400, "Course already assigned to user");
     }
 
+    // ✅ Unlock all videos as previews
+    course.videos = course.videos.map((video) => ({
+      ...video.toObject(), // safer than _doc
+      isPreview: true,
+    }));
+
+    // ✅ Handle referral incentive if course is trending
+    if (course.isTrending) {
+      await handleReferralIncentive(user, course);
+    }
+
+    // ✅ Assign course to user and vice versa
+    course.students.push(studentId);
     user.courses.push(courseId);
 
     await course.save();
     await user.save();
 
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          { course, user },
-          "Course assigned and all videos unlocked (as previews)"
-        )
-      );
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        { course, user },
+        "Course assigned and all videos unlocked (as previews)"
+      )
+    );
   } catch (error) {
-    console.log(error);
+    console.error("Error assigning course:", error);
     throw new ApiError(500, "Internal server error", error);
   }
 });
@@ -743,3 +821,31 @@ function convertToEmbedUrl(url) {
     return url; // return as-is if something fails
   }
 }
+const handleReferralIncentive = async (user, course) => {
+  const oneLevelUser = await User.findOne({
+    sharableReferralCode: user.referredByCode,
+  });
+  console.log("assign refereal amount")
+   if(!oneLevelUser){
+    console.log("user does not exists")
+   }
+  if (oneLevelUser) {
+    const bonus = course.price * 0.1;
+    console.log(bonus)
+    console.log("user exists")
+
+    oneLevelUser.total_income += bonus;
+    oneLevelUser.incentive += bonus;
+    oneLevelUser.totalTeam += 1;
+    oneLevelUser.myTeam.push(user._id   );
+
+    oneLevelUser.incomeHistory.push({
+      amount: bonus,
+      date: Date.now(),
+      from: user._id,
+    });
+    
+
+    await oneLevelUser.save();
+  }
+};

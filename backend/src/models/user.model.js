@@ -47,6 +47,9 @@ const userSchema = new mongoose.Schema({
     total_income: {
         type: Number, default: 0
     },
+    incentive:{
+        type: Number, default: 0
+    },
     incomeHistory:[
         {
             amount:{

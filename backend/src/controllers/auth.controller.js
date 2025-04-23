@@ -7,17 +7,18 @@ import { Wallet } from "../models/Wallet.model.js";
 // import { JsonWebToken } from "jsonwebtoken";
 
 const registerUser = asynchHandler(async (req, res) => {
-    let { name, email, password, referralcode, mobilenumber } = req.body;
+    let { name, email, password, referralCode, mobilenumber } = req.body;
     try {
         // const validateUser = validateUserInput({ name, email, password, refrralcode, mobilenumber });
         // if(!validateUser){
         //     throw new ApiError(400, "Invalid input");
         // }
         // console.log(name);
-
+        // console.log("this is referral code of who refer this user")
+        // console.log(referralCode)
         email = email.toLowerCase();
 
-        console.log("register user");
+        // console.log("register user");
 
         const exists = await User.findOne({
             $or: [{ email }, { mobilenumber }]
@@ -31,17 +32,17 @@ const registerUser = asynchHandler(async (req, res) => {
             }
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        if (referralcode) {
+        if (referralCode) {
 
 
-            const getReferralCode = await User.findOne({ sharableReferralCode: referralcode });
-            if (!getReferralCode) {
+            const getreferralCode = await User.findOne({ sharableReferralCode: referralCode });
+            if (!getreferralCode) {
                 throw new ApiError(400, "Invalid referral code");
             }
         }
         const namePart = name.substring(0, 3).toUpperCase();
-        console.log("mobile number");
-        console.log("mobile ", typeof mobilenumber);
+        // console.log("mobile number");
+        // console.log("mobile ", typeof mobilenumber);
         const mobilePart = mobilenumber.slice(-4);
         const randomPart = Math.floor(1000 + Math.random() * 9000);
     
@@ -52,9 +53,9 @@ const registerUser = asynchHandler(async (req, res) => {
             password: hashedPassword,
             sharableReferralCode,
             mobilenumber,
-            referredByCode: referralcode,
+            referredByCode: referralCode,
         });
-
+        // console.log(user)
         await user.save();
         const wallet = await new Wallet({
             user: user._id
@@ -62,9 +63,11 @@ const registerUser = asynchHandler(async (req, res) => {
         if (!wallet) {
             throw new ApiError(500, "Unable to create wallet");
         }
-        if (referralcode) {
-            const referralUser = await User.findOne({ sharableReferralCode: referralcode });
+        if (referralCode) {
+            // console.log("got the referral code")
+            const referralUser = await User.findOne({ sharableReferralCode: referralCode });
             if (referralUser) {
+                // console.log("user found")
                 const wallet = await Wallet.findOne({ user: referralUser._id });
 
                 wallet.balance += 1000;
@@ -76,8 +79,8 @@ const registerUser = asynchHandler(async (req, res) => {
                 throw new ApiError(400, "Invalid referral code");
             }
         }
-        console.log(wallet);
-        console.log(user);
+        // console.log(wallet);
+        // console.log(user);
         return res.status(200).json(new ApiResponse(201, { user }, "User registered successfully"));
 
     } catch (error) {
