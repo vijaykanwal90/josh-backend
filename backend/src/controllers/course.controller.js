@@ -525,32 +525,34 @@ const updateCourse = asynchHandler(async (req, res) => {
     if (req.body.videos !== undefined) {
       try {
         let parsedVideos;
-
+    
         if (typeof req.body.videos === "string") {
           parsedVideos = JSON.parse(req.body.videos);
         } else {
           parsedVideos = req.body.videos;
         }
-
+    
         if (Array.isArray(parsedVideos)) {
-          // Validate videos structure
           const validVideos = parsedVideos.every(
-            (video) =>
-              typeof video === "object" && "title" in video && "url" in video
+            (video) => typeof video === "object" && "title" in video && "url" in video
           );
-
+    
           if (validVideos) {
-            updatedFields.videos = parsedVideos;
+            // Convert YouTube URLs to embed format
+            const processedVideos = parsedVideos.map((video) => ({
+              ...video,
+              url: convertToEmbedUrl(video.url),
+            }));
+    
+            updatedFields.videos = processedVideos;
           } else {
-            return res
-              .status(400)
-              .json(
-                new ApiResponse(
-                  400,
-                  null,
-                  "Videos must contain title and url properties"
-                )
-              );
+            return res.status(400).json(
+              new ApiResponse(
+                400,
+                null,
+                "Videos must contain title and url properties"
+              )
+            );
           }
         } else {
           return res
