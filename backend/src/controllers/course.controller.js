@@ -520,7 +520,7 @@ const updateCourse = asynchHandler(async (req, res) => {
     }
 
     const updatedFields = { ...req.body };
-
+  
     // Process videos array
     if (req.body.videos !== undefined) {
       try {
@@ -624,7 +624,9 @@ const updateCourse = asynchHandler(async (req, res) => {
         }
       }
     });
-
+    if(req.body.courseIntrovideo !==undefined){
+      updatedFields.courseIntrovideo = convertToEmbedUrl(req.body.courseIntrovideo);
+    }
     const course = await Course.findByIdAndUpdate(id, updatedFields, {
       new: true,
       runValidators: true,
