@@ -6,7 +6,15 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 const getUser = asynchHandler(async (req, res) => {
     try {
         const user = await User.findById(req.user._id
-        ).populate("courses").populate("bundles");
+        ).populate("courses").populate("bundles")
+        .populate({
+            path: 'incomeHistory',
+            populate: {
+                path: 'from', // this is the field inside incomeHistory
+                select: 'name' // only get the name, not full user doc
+            }
+        })
+        ;
         if (!user) {
             throw new ApiError(404, "User not found");
         }
@@ -18,6 +26,21 @@ const getUser = asynchHandler(async (req, res) => {
 }
 );
 const getUserCourses = asynchHandler(async (req, res) => {
+     const { _id } = req.params;
+    try {
+        console.log("get courses")
+        const user = await User.findById(_id)
+        .select('name email courses bundles')
+        .populate('courses')
+        .populate('bundles')
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+        res.status(200).json(new ApiResponse(200, { user }, "User fetched successfully"));
+    } catch (error) {
+        console.log(error);
+        throw new ApiError(500, "Internal server error");
+    }
 });
 
 const updateUser = asynchHandler(async (req, res) => {
@@ -61,5 +84,25 @@ const getAllUser = asynchHandler(async(req,res)=>{
         throw new ApiError(404, "Internal server error");
     }
 })
+const getUserIncomeHistory = asynchHandler(async (req, res) => {
+    const {userId }= req.params;
+    try {
+        const user = await User.findById(userId).populate({
+            path: "incomeHistory",
+            populate: {
+                path: "from",
+                select: 'name'
+            }
+        });
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+        res.status(200).json(new ApiResponse(200, { user }, "User fetched successfully"));
+    } catch (error) {
+        console.log(error);
+        throw new ApiError(500, "Internal server error");
+    }
+}
+);
 
-export { updateUser, getUser,getAllUser ,getUserCourses};
+export { updateUser, getUser,getAllUser ,getUserCourses,getUserIncomeHistory};
