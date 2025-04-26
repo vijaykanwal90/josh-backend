@@ -5,8 +5,9 @@ import { ApiError } from "../utils/ApiError.js";
 import { asynchHandler } from "../utils/AsynchHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Bundle } from "../models/bundle.model.js";
-import { Course } from "../models/course.model.js";
 import { User } from "../models/user.model.js";
+import { Course } from "../models/course.model.js";
+import { ObjectId } from "mongodb";
 // import { Video } from "../models/video.model";
 import mongoose from "mongoose";
 
@@ -288,6 +289,94 @@ const assignBundle = asynchHandler(async (req, res) => {
   }
 });
 
+const addCourseToBundle = asynchHandler(async(req,res)=>{
+    try {
+        const {bundleId} = req.body;
+        const {courses} = req.body;
+        const bundle = await Bundle.findById(bundleId);
+        if(!bundle){
+            throw new ApiError(404,"Bundle not found");
+        }
+        const courseIds = courses.map((course) => new ObjectId(course));
+        const coursesToAdd = await Course.find({ _id: { $in: courseIds } });
+        if (coursesToAdd.length === 0) {
+            throw new ApiError(404, "No courses found");
+        }
+        // Check if the courses are already in the bundle
+        const existingCourses = bundle.courses.filter((course) =>
+            coursesToAdd.some((newCourse) => newCourse._id.equals(course))
+        );
+        if (existingCourses.length > 0) {
+            throw new ApiError(400, "Some courses are already in the bundle");
+        }
+        // Add bundle and bundleName to the courses
+        for (const course of coursesToAdd) {
+            course.bundle = bundle._id;
+            course.bundleName = bundle.bundleName;
+            await course.save();
+        }
+        // Add the new courses to the bundle
+        bundle.courses.push(...coursesToAdd);
+        await bundle.save();
+        return res.status(200).json(new ApiResponse(200,{bundle},"Courses added to bundle successfully"));
+    } catch (error) {
+        console.error("Error adding courses to bundle:", error);
+        throw new ApiError(500, "error while adding the course", error);  
+    }
+}) 
+
+
+const removeCourseFromBundle = asynchHandler(async(req,res)=>{
+  try {
+    const {bundleId} = req.body;
+    const {courseId} = req.body;
+    const bundle = await Bundle.findById(bundleId);
+    if(!bundle){
+        throw new ApiError(404,"Bundle not found");
+    }
+    const course = await Course.findById(courseId);
+    if(!course){
+        throw new ApiError(404,"Course not found");
+    }
+    // Check if the course is already in the bundle
+    const existingCourse = bundle.courses.find((c) => c._id.equals(courseId));
+    if (!existingCourse) {
+        throw new ApiError(400, "Course not found in the bundle");
+    }
+    // Remove the course from the bundle
+    const removedBundleFromCourse = await Course.findByIdAndUpdate(courseId, { $unset: { bundle: "",bundleName:"" } }, { new: true });
+    if (!removedBundleFromCourse) {
+        throw new ApiError(404, "Bundle not removed from course");
+    }
+  
+    bundle.courses = bundle.courses.filter((c) => !c._id.equals(courseId));
+    await bundle.save();
+    return res.status(200).json(new ApiResponse(200,{bundle},"Course removed from bundle successfully"));
+  } catch (error) {
+    console.error("Error removing course from bundle:", error);
+    throw new ApiError(500, "error while removing the course", error);  
+    
+  }
+})
+
+const removeBundle = asynchHandler(async (req, res) => {
+  const { id } = req.params;
+  try {
+    const bundle = await Bundle.findByIdAndDelete(id);
+    if (!bundle) {
+      throw new ApiError(404, "Bundle not found");
+    }
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Bundle deleted successfully"));
+  } catch (error) {
+    console.error(error);
+    throw new ApiError(500, "Internal server error", error);
+  }
+}
+);
+
+
 export {
   createBundle,
   updateBundle,
@@ -296,4 +385,7 @@ export {
   getAllBundles,
   assignBundle,
   getBundleByName,
+  addCourseToBundle,
+  removeCourseFromBundle,
+  removeBundle,
 };
