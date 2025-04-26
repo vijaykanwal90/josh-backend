@@ -373,10 +373,11 @@ const assignMentor = asynchHandler(async (req, res) => {
 
 // Fetch a course by its ID
 const getCourseById = asynchHandler(async (req, res) => {
-  const { id } = req.params;
+  const { courseId } = req.params;
+  console.log("got courses by id")
 
   try {
-    const course = await Course.findById(id);
+    const course = await Course.findById(courseId);
 
     if (!course) {
       throw new ApiError(404, "Course not found");

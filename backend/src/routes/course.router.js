@@ -49,7 +49,7 @@ router
   .route("/deleteCourse/:id")
   .delete(userAuth, checkRole(["admin"]), deleteCourse);
 router
-  .route("/:id")
+  .route("/:courseId")
   .get(getCourseById)
   .patch(userAuth, checkRole(["admin"]), upload.fields([
     
