@@ -4,18 +4,21 @@ import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js"
 import bcrypt from 'bcryptjs';
 import { Wallet } from "../models/Wallet.model.js";
+// import { JsonWebToken } from "jsonwebtoken";
+
 const registerUser = asynchHandler(async (req, res) => {
-    let { name, email, password, referralcode, mobilenumber } = req.body;
+    let { name, email, password, referralCode, mobilenumber } = req.body;
     try {
         // const validateUser = validateUserInput({ name, email, password, refrralcode, mobilenumber });
         // if(!validateUser){
         //     throw new ApiError(400, "Invalid input");
         // }
         // console.log(name);
-
+        // console.log("this is referral code of who refer this user")
+        // console.log(referralCode)
         email = email.toLowerCase();
 
-        console.log("register user");
+        // console.log("register user");
 
         const exists = await User.findOne({
             $or: [{ email }, { mobilenumber }]
@@ -29,17 +32,17 @@ const registerUser = asynchHandler(async (req, res) => {
             }
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        if (referralcode) {
+        if (referralCode) {
 
 
-            const getReferralCode = await User.findOne({ sharableReferralCode: referralcode });
-            if (!getReferralCode) {
+            const getreferralCode = await User.findOne({ sharableReferralCode: referralCode });
+            if (!getreferralCode) {
                 throw new ApiError(400, "Invalid referral code");
             }
         }
         const namePart = name.substring(0, 3).toUpperCase();
-        console.log("mobile number");
-        console.log("mobile ", typeof mobilenumber);
+        // console.log("mobile number");
+        // console.log("mobile ", typeof mobilenumber);
         const mobilePart = mobilenumber.slice(-4);
         const randomPart = Math.floor(1000 + Math.random() * 9000);
     
@@ -50,9 +53,9 @@ const registerUser = asynchHandler(async (req, res) => {
             password: hashedPassword,
             sharableReferralCode,
             mobilenumber,
-            referredByCode: referralcode,
+            referredByCode: referralCode,
         });
-
+        // console.log(user)
         await user.save();
         const wallet = await new Wallet({
             user: user._id
@@ -60,9 +63,11 @@ const registerUser = asynchHandler(async (req, res) => {
         if (!wallet) {
             throw new ApiError(500, "Unable to create wallet");
         }
-        if (referralcode) {
-            const referralUser = await User.findOne({ sharableReferralCode: referralcode });
+        if (referralCode) {
+            // console.log("got the referral code")
+            const referralUser = await User.findOne({ sharableReferralCode: referralCode });
             if (referralUser) {
+                // console.log("user found")
                 const wallet = await Wallet.findOne({ user: referralUser._id });
 
                 wallet.balance += 1000;
@@ -74,8 +79,8 @@ const registerUser = asynchHandler(async (req, res) => {
                 throw new ApiError(400, "Invalid referral code");
             }
         }
-        console.log(wallet);
-        console.log(user);
+        // console.log(wallet);
+        // console.log(user);
         return res.status(200).json(new ApiResponse(201, { user }, "User registered successfully"));
 
     } catch (error) {
@@ -83,13 +88,12 @@ const registerUser = asynchHandler(async (req, res) => {
         throw new ApiError(500, "Internal server error");
     }
 });
-
 const loginUser = asynchHandler(async (req, res) => {
     let { email, password } = req.body;
     try {
         email = email.toLowerCase();
        
-        console.log("in logged route")
+        console.log("in logged in route")
         const user = await User
             .findOne({ email })
             .select("+password")
@@ -103,8 +107,13 @@ const loginUser = asynchHandler(async (req, res) => {
             httpOnly: true,
             secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
         });
+        // const token = JsonWebTokenError.sign(
+        //     {userId: user._id},
+        //     process.env.JWT_SECRET,
+        //     { expiresIn: '24h' }   
+        // )
 
-        return res.status(200).json(new ApiResponse(200, { user }, "User logged in successfully"));
+        return res.status(200).json(new ApiResponse(200, { token,user }, "User logged in successfully"));
 
     } catch (error) {
         console.log(error);
@@ -115,12 +124,47 @@ const loginUser = asynchHandler(async (req, res) => {
 const logoutUser = (req, res) => {
     try {
         res.clearCookie('token');
-        return res.status(200).json(new ApiResponse(200, {}, "User logged out successfully"));
+    return res.status(200).json(new ApiResponse(200, {}, "User logged out successfully"));
     } catch (error) {
         console.log(error);
         throw new ApiError(500, "Internal server error");
     }
 }
 
+const checkUserExist = asynchHandler(async (req, res) => {
+    console.log(req.body)
+    let { mobilenumber,email } = req.body;
+    console.log(mobilenumber)
+    console.log(email);
+    try {
+        let user = await User.findOne(
+            {
+                mobilenumber
+            }
+        )
+        console.log(user)
+        if(user){
+            throw new ApiError(400, "Mobile number already exists");
+        }
+        if (!user) {
+             user = await User.findOne(
+                {
+                    email
+                }
+            )
+        }
+        if(user){
+        throw new ApiError(400, "Email already exists");
+        }   
+        if (!user) {
+          return  res.status(200).json(new ApiResponse(200, null, "User not found")); 
+        }
+       
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(new ApiResponse(500, null, error.message));
+    }
+}
+);
 
-export { registerUser, loginUser, logoutUser };
+export { registerUser, loginUser, logoutUser, checkUserExist };

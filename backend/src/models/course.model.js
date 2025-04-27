@@ -1,9 +1,10 @@
 import mongoose from "mongoose";
 
-const courseSchema = new mongoose.Schema({
+const courseSchema = new mongoose.Schema(
+  {
     title: {
       type: String,
-      required: true
+      required: true,
     },
     image: {
       type: String,
@@ -11,10 +12,13 @@ const courseSchema = new mongoose.Schema({
     bundleName: {
       type: String,
     },
-    courseMentorName: {
+
+    category: {
       type: String,
     },
-  
+    courseIntrovideo: {
+      type: String,
+    },
     // 👇 Multiple videos with preview flag
     videos: [
       {
@@ -22,57 +26,95 @@ const courseSchema = new mongoose.Schema({
         url: String,
         isPreview: {
           type: Boolean,
-          default: false  // true for first video
-        }
-      }
+          default: false, // true for first video
+        },
+      },
     ],
-  
+
     description: {
       type: String,
     },
-  
+
     price: {
       type: Number,
-      required: true
+      required: true,
     },
-  
+
     duration: {
       type: String,
     },
-  
+
     bundle: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Bundle',
+      ref: "Bundle",
     },
-  
+
     // 👇 Track enrolled students
-    students: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    }],
-    mentor: [{
+    students: [
+      {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Mentor'
-      }],
-    whyCourse: [{
-      type: String
-    }],
-    whatYouWillLearn: [{
-        type: String
-        }],
-    courseHighlights: [{
-        type: String
-        }],
-    whoShouldEnroll: [{
-        type: String
-        }],
+        ref: "User",
+      },
+    ],
+    mentor: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Mentor",
+      },
+    ],
+    whatYouWillLearn: [
+      {
+        type: String,
+      },
+    ],
+    whyCourse: [
+      {
+        type: String,
+      },
+    ],
+    whoShouldEnroll: [
+      {
+        type: String,
+      },
+    ],
+    stillConfused: [
+      {
+        type: String,
+      },
+    ],
+    reasonWhyJoshGuru: [
+      {
+        type: String,
+      },
+    ],
+    courseHighlights: [
+      {
+        type: String,
+      },
+    ],
+
+    HowWillHelpYou: {
+      type: String,
+    },
     isTrending: {
       type: Boolean,
-      default: false
+      default: false,
     },
-  
-  }, {
-    timestamps: true
-  });
-  
-export const Course = mongoose.model('Course', courseSchema);
+    isOffline: {
+      type: Boolean,
+      default: false,
+    },
+    pdfPath:{
+      type: String,
+    },
+    certificatePath:{
+      type: String,
+      default:"/fileStore/certificate.png"
+    }
+  },
+  {
+    timestamps: true,
+  }
+);
+
+export const Course = mongoose.model("Course", courseSchema);
