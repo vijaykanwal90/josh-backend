@@ -6,6 +6,19 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Course } from "../models/course.model.js";
 // Add Mentor
 import bcrypt from 'bcryptjs';
+const getMentors = asynchHandler (async (req,res)=>{
+    try{
+        const mentors = await Mentor.find();
+        if(!mentors){
+            throw new ApiError(404,"Mentors not found");
+        }
+        res.status(200).json(new ApiResponse(200, {mentors}, "Mentors fetched successfully"));
+    }
+    catch(error){
+        console.log(error);
+        throw new ApiError(500, "Internal server error");
+    }
+})
 const addMentor = asynchHandler(async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -106,4 +119,4 @@ const deleteMentor = asynchHandler(async (req, res) => {
     }
 });
 
-export { addMentor, updateMentor, deleteMentor, addCourseToMentor };
+export { addMentor, updateMentor, deleteMentor, addCourseToMentor , getMentors };

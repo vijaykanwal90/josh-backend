@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getMentors,
   addMentor,
   updateMentor,
   deleteMentor, 
@@ -9,6 +10,7 @@ import Router from "express";
 const router = Router();
 
 // Add a mentor
+router.get("/getAllMentors", getMentors);
 router.post("/add", addMentor);
 // router.post("/addCourseToMentor", addCourseToMentor);
 // router.route('/update/:id').patch(addCourseToMentor);
