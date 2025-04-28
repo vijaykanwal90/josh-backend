@@ -33,7 +33,7 @@ const mentorSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Course'
     }],
-    mobilenumber: {
+    mobileNumber: {
         type: String,
         required: true
     },

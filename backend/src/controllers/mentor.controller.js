@@ -21,35 +21,75 @@ const getMentors = asynchHandler (async (req,res)=>{
 })
 const addMentor = asynchHandler(async (req, res) => {
     try {
-        const { email, password } = req.body;
-
+        console.log("adding mentor");
+        
+        const { name, email, mobileNumber, about, socialLinks } = req.body;
+        
+        // Basic validation
         if (!email) {
             throw new ApiError(400, "Email is required");
         }
 
+        // Check if the mentor already exists
         const existingMentor = await Mentor.findOne({ email });
         if (existingMentor) {
             throw new ApiError(400, "Mentor already exists with this email");
         }
 
-        // Clone body to modify if password exists
-        const mentorData = { ...req.body };
+        // Handle file upload and path creation
+        const mentorImage = req.file;
+        const localMentorImagePath = mentorImage ? `/fileStore/${mentorImage.filename}` : null;
 
-        // Hash password if provided
-        if (password) {
-            mentorData.password = await bcrypt.hash(password, 10);
+        // Parse socialLinks if it is a string, and ensure it's properly formatted
+        let parsedSocialLinks = [];
+        try {
+            parsedSocialLinks = typeof socialLinks === 'string' ? JSON.parse(socialLinks) : socialLinks;
+        } catch (err) {
+            throw new ApiError(400, "Invalid socialLinks format");
         }
 
-        const mentor = await Mentor.create(mentorData);
+        // Create mentor data
+        const mentor = await Mentor.create({
+            name,
+            email,
+            mobileNumber,
+            about,
+            socialLinks: parsedSocialLinks,
+            profileImage: localMentorImagePath,
+        });
 
+        // Return successful response
         res.status(201).json(
             new ApiResponse(201, { mentor }, "Mentor created successfully")
         );
     } catch (error) {
         console.log(error);
+        // Check for custom errors and pass them accordingly
+        if (error instanceof ApiError) {
+            throw error;
+        }
         throw new ApiError(500, "Internal server error");
     }
 });
+const getMentorById = asynchHandler(async (req, res) => {
+    const {mentorId} = req.params;
+    try {
+        console.log(mentorId)
+        const mentor = await Mentor.findById(mentorId);
+        if (!mentor) {
+            throw new ApiError(404, "Mentor not found");
+        }
+        res.status(200).json(
+            new ApiResponse(200, { mentor }, "Mentor fetched successfully")
+        ); 
+    } catch (error) {
+        console.log(error);
+        throw new ApiError(500, "Internal server error");
+        
+    }
+
+});
+
 
 const addCourseToMentor = asynchHandler(async (req, res) => {
     const { mentorId, courseId } = req.body;
@@ -119,4 +159,4 @@ const deleteMentor = asynchHandler(async (req, res) => {
     }
 });
 
-export { addMentor, updateMentor, deleteMentor, addCourseToMentor , getMentors };
+export { addMentor, updateMentor, deleteMentor, addCourseToMentor , getMentors , getMentorById };

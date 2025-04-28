@@ -1,28 +1,36 @@
 import express from "express";
+import { checkRole } from "../middlewares/role.middleware.js";
+import { upload, handleMulterError } from "../middlewares/multer.middleware.js";
 import {
   getMentors,
   addMentor,
   updateMentor,
   deleteMentor, 
-  addCourseToMentor
+  addCourseToMentor,
+  getMentorById,
 } from "../controllers/mentor.controller.js";
-import Router from "express";
-const router = Router();
+import { userAuth } from "../middlewares/auth.middleware.js";
 
-// Add a mentor
+const router = express.Router(); // ✅ Correct
+
+// Routes
 router.get("/getAllMentors", getMentors);
-router.post("/add", addMentor);
-// router.post("/addCourseToMentor", addCourseToMentor);
-// router.route('/update/:id').patch(addCourseToMentor);
-
-
+router.get("/getMentorById/:mentorId", getMentorById);
+router.route("/add")
+  .post(
+    upload.single('mentorImage'),
+    userAuth,
+    checkRole(['admin']),
+    addMentor
+  );
 
 // Update a mentor by ID
 router.put("/update/:id", updateMentor);
 
 // Delete a mentor by ID
 router.delete("/delete/:id", deleteMentor);
-router.route('/addcourseToMentor').patch(addCourseToMentor);
 
+// Add course to mentor
+router.patch('/addcourseToMentor', addCourseToMentor);
 
 export default router;

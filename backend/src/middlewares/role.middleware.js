@@ -7,7 +7,7 @@ const checkRole = (roles) => {
     return asynchHandler((req, res, next) => {
         try {
             // Check if the user's role exists on the request object (from previous middleware like userAuth)
-            console.log(req.user)
+            // console.log(req.user)
             if (!req.user || !roles.includes(req.user.role)) {
                 throw new ApiError(403, "You are not authorized to access this route");
             }
