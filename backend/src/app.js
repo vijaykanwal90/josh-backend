@@ -12,6 +12,7 @@ import blogrouter from './routes/blog.router.js'
 import bundlerouter from './routes/bundle.router.js'
 import cors from 'cors'
 import studentTestimonialRouter from "./routes/studentTestimonial.router.js";
+import webinar from './routes/webinar.router.js';
 import mentorrouter from './routes/mentor.router.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -51,6 +52,7 @@ app.use('/api/v1/video', videorouter);
 app.use('/api/v1/wallet',walletrouter);
 app.use('/api/v1/discount',discountrouter);
 app.use('/api/v1/blog', blogrouter);
+app.use('/api/v1/webinar', webinar);
 app.use("/api/v1/mentors", mentorrouter);
 app.use("/api/v1/testimonials", testimonialRouter);
 app.use("/api/v1/studenttestimonials", studentTestimonialRouter);
