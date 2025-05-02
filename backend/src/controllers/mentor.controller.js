@@ -23,12 +23,13 @@ const addMentor = asynchHandler(async (req, res) => {
     try {
         console.log("adding mentor");
         
-        const { name, email, mobileNumber, about, socialLinks } = req.body;
+        const { name, email, mobileNumber, about, socialLinks, position } = req.body;
         
         // Basic validation
         if (!email) {
             throw new ApiError(400, "Email is required");
-        }
+        } 
+        console.log("mentor position", position);
 
         // Check if the mentor already exists
         const existingMentor = await Mentor.findOne({ email });
@@ -56,6 +57,7 @@ const addMentor = asynchHandler(async (req, res) => {
             about,
             socialLinks: parsedSocialLinks,
             profileImage: localMentorImagePath,
+            position,
         });
 
         // Return successful response
@@ -128,11 +130,11 @@ const addCourseToMentor = asynchHandler(async (req, res) => {
 const updateMentor = asynchHandler(async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, email, about, mobilenumber, socialLinks, role } = req.body;
+        const { name, email, about, mobilenumber, socialLinks, position } = req.body;
 
         const mentor = await Mentor.findByIdAndUpdate(
             id,
-            { name, email, about, mobilenumber, socialLinks, role },
+            { name, email, about, mobilenumber, socialLinks, position },
             { new: true, runValidators: true }
         );
 

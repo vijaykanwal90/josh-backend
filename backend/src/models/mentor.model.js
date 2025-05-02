@@ -11,10 +11,9 @@ const mentorSchema = new mongoose.Schema({
         type: String,
         // required: true
     },
-    password: {
+    position:{
         type: String,
-        // required: true,
-        select: false
+        // required: true
     },
     profileImage: {
         type: String,
