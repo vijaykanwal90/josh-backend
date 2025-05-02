@@ -93,31 +93,37 @@ const getMentorById = asynchHandler(async (req, res) => {
 
 const addCourseToMentor = asynchHandler(async (req, res) => {
     const { mentorId, courseId } = req.body;
-
-    // Check if mentor and course exist
+  
+    // Validate mentor and course
     const mentor = await Mentor.findById(mentorId);
     const course = await Course.findById(courseId);
-
+  
     if (!mentor) {
-        throw new ApiError(404, "Mentor not found");
+      throw new ApiError(404, "Mentor not found");
     }
+  
     if (!course) {
-        throw new ApiError(404, "Course not found");
+      throw new ApiError(404, "Course not found");
     }
-
-    // Avoid duplicates
+  
+    // Check for duplicate course assignment
     if (mentor.courses.includes(courseId)) {
-        throw new ApiError(400, "Course already added to mentor");
+      throw new ApiError(400, "Course already assigned to this mentor");
     }
-
-    // Add course to mentor
+  
+    // Assign course to mentor
     mentor.courses.push(courseId);
     await mentor.save();
-
+  
+    // Assign mentor to course
+    course.mentors.push(mentorId);
+    await course.save();
+  
     res.status(200).json(
-        new ApiResponse(200, { mentor }, "Course added to mentor successfully")
+      new ApiResponse(200, { mentor }, "✅ Course assigned to mentor successfully")
     );
-});
+  });
+  
 // Update Mentor
 const updateMentor = asynchHandler(async (req, res) => {
     try {
