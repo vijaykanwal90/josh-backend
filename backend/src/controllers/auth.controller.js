@@ -40,7 +40,8 @@ const registerUser = asynchHandler(async (req, res) => {
                 throw new ApiError(400, "Invalid referral code");
             }
         }
-        const namePart = name.substring(0, 3).toUpperCase();
+        const namePart = name.split(" ")[0].toUpperCase();
+
         // console.log("mobile number");
         // console.log("mobile ", typeof mobilenumber);
         const mobilePart = mobilenumber.slice(-4);
