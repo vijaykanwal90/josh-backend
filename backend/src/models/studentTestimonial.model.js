@@ -17,6 +17,15 @@ const studentTestimonial = new mongoose.Schema({
         type: String,
         required: true
     },
+    isVideo:{
+        type: Boolean,
+        default: false
+    },
+    videoUrl:{
+        type: String,
+        default: "https://www.youtube.com/embed/9WBanQptJDc"
+
+    },
     rating: {
         type: Number,
         required: true,

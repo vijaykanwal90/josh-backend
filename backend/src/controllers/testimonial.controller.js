@@ -3,6 +3,10 @@ import { Testimonial } from "../models/testimonial.model.js";
 // Add a new testimonial
 export const addTestimonial = async (req, res) => {
     try {
+        const { video } = req.body;
+        if (video) {
+            req.body.video = convertToEmbedUrl(video);
+        }
         const testimonial = new Testimonial(req.body);
         await testimonial.save();
         res.status(201).json({ message: "Testimonial added successfully", testimonial });
@@ -50,6 +54,10 @@ export const deleteTestimonial = async (req, res) => {
 // Update a testimonial
 export const updateTestimonial = async (req, res) => {
     try {
+        const { video } = req.body;
+        if (video) {
+            req.body.video = convertToEmbedUrl(video);
+        }
         const testimonial = await Testimonial.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
         if (!testimonial) {
             return res.status(404).json({ message: "Testimonial not found" });
@@ -59,3 +67,14 @@ export const updateTestimonial = async (req, res) => {
         res.status(400).json({ message: "Failed to update testimonial", error: error.message });
     }
 };
+function convertToEmbedUrl(url) {
+    try {
+      const parsedUrl = new URL(url);
+      const videoId = parsedUrl.pathname.split("/").pop();
+      const query = parsedUrl.search; // includes ?si=...
+      return `https://www.youtube.com/embed/${videoId}${query}`;
+    } catch (error) {
+      console.error("Invalid URL:", url);
+      return url; // return as-is if something fails
+    }
+  }

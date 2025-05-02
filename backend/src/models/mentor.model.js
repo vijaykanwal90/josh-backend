@@ -11,10 +11,9 @@ const mentorSchema = new mongoose.Schema({
         type: String,
         // required: true
     },
-    password: {
+    position:{
         type: String,
-        // required: true,
-        select: false
+        // required: true
     },
     profileImage: {
         type: String,
@@ -33,7 +32,7 @@ const mentorSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Course'
     }],
-    mobilenumber: {
+    mobileNumber: {
         type: String,
         required: true
     },

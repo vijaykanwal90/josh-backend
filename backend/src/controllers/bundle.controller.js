@@ -12,24 +12,30 @@ import { ObjectId } from "mongodb";
 import mongoose from "mongoose";
 
 const createBundle = asynchHandler(async (req, res) => {
-  const { bundleName, description, price, whyBundle, bundleImage } = req.body;
-
+  const { bundleName, description, price, whyBundle } = req.body;
+  const bundleImage = req.files?.bundleImage?.[0];
   try {
     let bundle = await Bundle.findOne({ bundleName });
-    if (!bundle) {
+   
+    if(bundle){
+      throw new ApiError(400, "Bundle already exists");
+    }
+    const filePath = bundleImage?`/fileStore/${bundleImage.filename}`:null;
+      if(filePath==null){
+        throw new ApiError(400, "Bundle image is required");
+      }
       bundle = new Bundle({
         bundleName,
         description,
         price,
         whyBundle,
-        bundleImage: bundleImage || "pending",
+        bundleImage: filePath,
         courses: [],
       });
-      await bundle.save();
-    } else {
-      throw new ApiError(400, "Bundle already exists");
-    }
 
+      await bundle.save();
+      console.log("bundle created successfyly");
+    
     return res
       .status(201)
       .json(new ApiResponse(201, { bundle }, "Bundle created successfully"));
@@ -297,7 +303,13 @@ const addCourseToBundle = asynchHandler(async(req,res)=>{
         if(!bundle){
             throw new ApiError(404,"Bundle not found");
         }
+        if(!courses || courses.length === 0){
+            throw new ApiError(400,"Courses are required");
+        }
+        // Check if the courses exist
+        // console.log("courses",courses);
         const courseIds = courses.map((course) => new ObjectId(course));
+        // console.log("courseIds",courseIds);
         const coursesToAdd = await Course.find({ _id: { $in: courseIds } });
         if (coursesToAdd.length === 0) {
             throw new ApiError(404, "No courses found");
@@ -361,8 +373,10 @@ const removeCourseFromBundle = asynchHandler(async(req,res)=>{
 
 const removeBundle = asynchHandler(async (req, res) => {
   const { id } = req.params;
+  const bundleId = new mongoose.Types.ObjectId(id);
+
   try {
-    const bundle = await Bundle.findByIdAndDelete(id);
+    const bundle = await Bundle.findByIdAndDelete(bundleId);
     if (!bundle) {
       throw new ApiError(404, "Bundle not found");
     }
