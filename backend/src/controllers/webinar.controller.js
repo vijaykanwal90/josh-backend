@@ -3,15 +3,19 @@ import  Webinar  from "../models/webinar.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { uploadCloudinary } from "../utils/Cloudinary.js";
+import sendMail from "../utils/sendMail.js";
+import twilio from 'twilio';
+const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
 // Add new webinar
 const addWebinar = asynchHandler(async (req, res) => {
     try {
-        const { title, description, date, time, duration, presenterName, presenterRole } = req.body;
+        const { title, description, categories, date, time, duration, presenterName, presenterRole } = req.body;
         
         const requiredFields = [
             { field: title, name: "Title" },
             { field: description, name: "Description" },
+            { field: categories, name: "Category" },
             { field: date, name: "Date" },
             { field: time, name: "Time" },
             { field: duration, name: "Duration" },
@@ -39,6 +43,7 @@ const addWebinar = asynchHandler(async (req, res) => {
         const webinar = new Webinar({
             title,
             description,
+            categories,
             date,
             time,
             duration,
@@ -107,8 +112,9 @@ const getSingleWebinar = asynchHandler(async (req, res) => {
 // update webinar
 const updateWebinar = asynchHandler(async (req, res) => {
     try {
+        let isRescheduled = false;
         const webinarId = req.params.id;
-        const { title, description, date, time, duration, presenterName, presenterRole } = req.body;
+        const { title, description, categories, date, time, duration, presenterName, presenterRole } = req.body;
 
         const webinar = await Webinar.findById(webinarId);
         if (!webinar) {
@@ -116,8 +122,15 @@ const updateWebinar = asynchHandler(async (req, res) => {
         }
         if (title) webinar.title = title;
         if (description) webinar.description = description;
-        if (date) webinar.date = date;
-        if (time) webinar.time = time;
+        if (categories) webinar.categories = categories;
+        if (date && webinar.date !== date) {
+            webinar.date = date;
+            isRescheduled = true;
+        }
+        if (time && webinar.time !== time) {
+            webinar.time = time;
+            isRescheduled = true;
+        }
         if (duration) webinar.duration = duration;
         if (presenterName) webinar.presenterName = presenterName;
         if (presenterRole) webinar.presenterRole = presenterRole;
@@ -133,12 +146,22 @@ const updateWebinar = asynchHandler(async (req, res) => {
         }
         await webinar.save();
 
+
+        if (isRescheduled) {
+            await sendMail({
+            from: process.env.MAIL,
+            to: webinar.webinarUsers.map(user => user.email),
+            subject: `Webinar Rescheduled - ${webinar.title}`,
+            text: `The webinar "${webinar.title}" has been rescheduled.\nNew Date: ${webinar.date}\nNew Time: ${webinar.time}\n\nThank you!`
+            });
+        }
+
         res.status(200)
         .json(new ApiResponse
             (
-                200, 
-                { webinar }, 
-                "Webinar updated successfully"
+            200, 
+            { webinar }, 
+            "Webinar updated successfully"
             ));
         
     }catch (error) {
@@ -301,12 +324,91 @@ const registerForWebinar = asynchHandler(async (req, res) => {
         };
         webinar.webinarUsers.push(user);
         await webinar.save();
+        await sendMail({
+            from: process.env.MAIL,
+            to: email,
+            subject: `Webinar Registration Confirmation - ${webinar.title}`,
+            text: `Hi ${name},\n\nYou have successfully registered for the webinar: ${webinar.title}.\nDate: ${webinar.date}\n\nThank you!`
+        });
+        client.messages
+        .create({
+            body: `Hi ${name},\n\nYou have successfully registered for the webinar: ${webinar.title}.\nDate: ${webinar.date}\n\nThank you!`,
+            from: 'whatsapp:+14155238886',
+            to: 'whatsapp:+919579396984'
+        })
+        .then(message => console.log('WhatsApp message sent:', message.sid))
+        .catch(error => console.error('Error sending WhatsApp message:', error));
+
         res.status(200)
         .json(new ApiResponse
             (
                 200, 
                 { user }, 
                 "User registered for webinar successfully"
+            ));
+    } catch (error) {
+        console.log(error);
+        throw new ApiError(500, "Internal server error");
+    }
+});
+
+// set link for webinar
+const setWebinarLink = asynchHandler(async (req, res) => {
+    try {
+        const webinarId = req.params.id;
+        const { link } = req.body;
+        if (!link) {
+            throw new ApiError(400, "Link is required");
+        }
+        const webinar = await Webinar.findById(webinarId);
+        if (!webinar) {
+            throw new ApiError(404, "Webinar not found");
+        }
+        webinar.link = link;
+        await webinar.save();
+        await sendMail({
+            from: process.env.MAIL,
+            to: webinar.webinarUsers.map(user => user.email),
+            subject: `Webinar Link - ${webinar.title}`,
+            text: `The link for the webinar "${webinar.title}" is now available.\nLink: ${link}\n\nThank you!`
+        });
+        res.status(200)
+        .json(new ApiResponse
+            (
+                200, 
+                { webinar }, 
+                "Webinar link set successfully"
+            ));
+    } catch (error) {
+        console.log(error);
+        throw new ApiError(500, "Internal server error");
+    }
+});
+
+// send mail to all users
+const sendMailToAllUsers = asynchHandler(async (req, res) => {
+    try {
+        const webinarId = req.params.id;
+        const { subject, text } = req.body;
+        if (!subject || !text) {
+            throw new ApiError(400, "Subject and text are required");
+        }
+        const webinar = await Webinar.findById(webinarId);
+        if (!webinar) {
+            throw new ApiError(404, "Webinar not found");
+        }
+        await sendMail({
+            from: process.env.MAIL,
+            to: webinar.webinarUsers.map(user => user.email),
+            subject,
+            text
+        });
+        res.status(200)
+        .json(new ApiResponse
+            (
+                200, 
+                {}, 
+                "Mail sent to all users successfully"
             ));
     } catch (error) {
         console.log(error);
@@ -322,5 +424,7 @@ export {
     deleteWebinar,
     changeWebinarStatus,
     rescheduleWebinar,
-    registerForWebinar 
+    registerForWebinar,
+    setWebinarLink,
+    sendMailToAllUsers 
 };
