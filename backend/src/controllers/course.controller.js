@@ -164,10 +164,9 @@ const createCourse = asynchHandler(async (req, res) => {
       courseHighlights,
       whoShouldEnroll,
       isTrending,
-      isOffline,
-      courseIntrovideo
+      isOffline
     } = req.body;
-
+    let { courseIntrovideo } = req.body;
     console.log("Creating course...");
 
     // Parse videos if sent as JSON string
