@@ -42,6 +42,14 @@ const webinarSchema = new Schema({
         enum: ['scheduled', 'live', 'completed', 'cancelled'], // Fix typo
         default: 'scheduled',
     },
+    categories:{
+        type: String,
+        enum: ['digital-marketing', 'full-stack', 'microsoft-dynamic','odoo-erp'],
+        required: [true, 'Category is required']
+    },
+    link:{
+        type: String,
+    },
     webinarUsers: [
         {
             name: {
