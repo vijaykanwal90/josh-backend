@@ -9,7 +9,8 @@ import {
     rescheduleWebinar,
     registerForWebinar,
     sendMailToAllUsers,
-    setWebinarLink
+    setWebinarLink,
+    exportWebinarUsersToCSV
 } from "../controllers/webinar.controller.js";
 import { userAuth } from "../middlewares/auth.middleware.js";
 import { checkRole } from "../middlewares/role.middleware.js"
@@ -37,8 +38,9 @@ router.put('/:id',
 router.delete('/:id', userAuth, checkRole(['admin']), deleteWebinar);
 router.put('/status/:id', userAuth, checkRole(['admin']), changeWebinarStatus);
 router.put('/reschedule/:id', userAuth, checkRole(['admin']), rescheduleWebinar);
-router.put('/link/:id', userAuth, checkRole(['admin']), setWebinarLink);
-router.post('/send-mail', userAuth, checkRole(['admin']), sendMailToAllUsers);
+router.post('/link/:id', userAuth, checkRole(['admin']), setWebinarLink);
+router.post('/send-mail/:id', userAuth, checkRole(['admin']), sendMailToAllUsers);
+router.get('/export-json-to-csv/:id', userAuth, checkRole(['admin']), exportWebinarUsersToCSV);
 
 
 // Public routes

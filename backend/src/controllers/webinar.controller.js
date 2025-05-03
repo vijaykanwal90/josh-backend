@@ -6,6 +6,8 @@ import { uploadCloudinary } from "../utils/Cloudinary.js";
 import sendMail from "../utils/sendMail.js";
 import twilio from 'twilio';
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+import { Parser } from 'json2csv';
+import mongoose from 'mongoose';
 
 // Add new webinar
 const addWebinar = asynchHandler(async (req, res) => {
@@ -416,6 +418,72 @@ const sendMailToAllUsers = asynchHandler(async (req, res) => {
     }
 });
 
+// Export webinarusers data to csv
+const exportWebinarUsersToCSV = asynchHandler(async (req, res) => {
+    try {
+        // 1. Properly extract ID from URL parameters
+        const { id } = req.params;
+
+        // 2. Validate ID format
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid webinar ID format"
+            });
+        }
+
+        // 3. Find the webinar with proper ID casting
+        const webinar = await Webinar.findById(id);
+        if (!webinar) {
+            return res.status(404).json({
+                success: false,
+                message: "Webinar not found"
+            });
+        }
+
+        // 4. Check for registered users
+        if (!webinar.webinarUsers?.length) {
+            return res.status(400).json({
+                success: false,
+                message: "No registered users for this webinar"
+            });
+        }
+
+        // 5. Prepare CSV data
+        const usersData = webinar.webinarUsers.map(user => ({
+            Name: user.name,
+            Email: user.email,
+            Mobile: user.mobile,
+            'Registration Date': new Date(user.registeredAt).toLocaleString()
+        }));
+
+        // 6. Configure CSV parser
+        const parser = new Parser({
+            fields: ['Name', 'Email', 'Mobile', 'Registration Date']
+        });
+
+        // 7. Generate CSV
+        const csv = parser.parse(usersData);
+
+        // 8. Set response headers
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 
+            `attachment; filename="${webinar.title.replace(/ /g,'_')}_users.csv"`
+        );
+
+        // 9. Send CSV response
+        res.send(csv);
+
+    } catch (error) {
+        console.error('Export error:', error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to export users",
+            error: error.message
+        });
+    }
+});
+
 export { 
     addWebinar,
     getAllWebinars,
@@ -426,5 +494,6 @@ export {
     rescheduleWebinar,
     registerForWebinar,
     setWebinarLink,
-    sendMailToAllUsers 
+    sendMailToAllUsers,
+    exportWebinarUsersToCSV 
 };
