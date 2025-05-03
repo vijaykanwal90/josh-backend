@@ -513,13 +513,15 @@ const getMentorCourses = asynchHandler(async (req, res) => {
 // });
 
 const updateCourse = asynchHandler(async (req, res) => {
-  const { id } = req.params;
+  const { courseId } = req.params;
 
   try {
+    
+    console.log("updateing course ")
     // Validate the ID format
   console.log("this is id")
-    console.log(id)
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    console.log(courseId)
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
       return res
         .status(400)
         .json(new ApiResponse(400, null, "Invalid course ID format"));
@@ -635,7 +637,7 @@ const updateCourse = asynchHandler(async (req, res) => {
     if(req.body.courseIntrovideo !==undefined){
       updatedFields.courseIntrovideo = convertToEmbedUrl(req.body.courseIntrovideo);
     }
-    const course = await Course.findByIdAndUpdate(id, updatedFields, {
+    const course = await Course.findByIdAndUpdate(courseId, updatedFields, {
       new: true,
       runValidators: true,
     });
@@ -667,7 +669,27 @@ const deleteCourse = asynchHandler(async (req, res) => {
     if (!course) {
       throw new ApiError(404, "Course not found");
     }
+    // Remove course from bundle if it exists
+    // if (course.bundle) {
+    //   const bundle = await Bundle.findById(course.bundle);
+    //   if (bundle) {
+    //     bundle.courses = bundle.courses.filter(
+    //       (courseId) => courseId.toString() !== id
+    //     );
+    //     await bundle.save();
+    //   }
+    // }
+    // Remove course from users who are enrolled
+    const users = await User.updateMany(
+      { courses: id },
+      { $pull: { courses: id } }
+    );
 
+    // Remove course from mentors who are assigned
+    const mentors = await Mentor.updateMany(
+      { courses: id },
+      { $pull: { courses: id } }
+    );
     return res
       .status(200)
       .json(new ApiResponse(200, { course }, "Course deleted successfully"));

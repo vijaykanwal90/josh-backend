@@ -8,6 +8,7 @@ import {
   deleteMentor, 
   addCourseToMentor,
   getMentorById,
+  removeCourseFromMentor
 } from "../controllers/mentor.controller.js";
 import { userAuth } from "../middlewares/auth.middleware.js";
 
@@ -30,9 +31,10 @@ userAuth,
 checkRole(['admin']), updateMentor);
 
 // Delete a mentor by ID
-router.delete("/delete/:id", deleteMentor);
+router.route("/delete/:id").delete(userAuth,checkRole(['admin']), deleteMentor);
 
 // Add course to mentor
-router.patch('/addcourseToMentor', addCourseToMentor);
+router.route('/addcourseToMentor').patch(userAuth, checkRole(['admin']), addCourseToMentor);
+router.route('/removeCourse').patch(userAuth, checkRole(['admin']), removeCourseFromMentor);
 
 export default router;
