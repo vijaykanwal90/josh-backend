@@ -3,6 +3,10 @@ import { StudentTestimonial } from "../models/studentTestimonial.model.js";
 // Create a new testimonial
 export const createTestimonial = async (req, res) => {
     try {
+        const {videoUrl} = req.body;
+        if (videoUrl) {
+            req.body.videoUrl = convertToEmbedUrl(videoUrl);
+        }
         const newTestimonial = new StudentTestimonial(req.body);
         const savedTestimonial = await newTestimonial.save();
         res.status(201).json(savedTestimonial);
@@ -37,6 +41,10 @@ export const getTestimonialById = async (req, res) => {
 // Update a testimonial
 export const updateTestimonial = async (req, res) => {
     try {
+        const {videoUrl} = req.body;
+        if (videoUrl) {
+            req.body.videoUrl = convertToEmbedUrl(videoUrl);
+        }
         const updatedTestimonial = await StudentTestimonial.findByIdAndUpdate(
             req.params.id,
             req.body,
@@ -63,3 +71,14 @@ export const deleteTestimonial = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+function convertToEmbedUrl(url) {
+    try {
+      const parsedUrl = new URL(url);
+      const videoId = parsedUrl.pathname.split("/").pop();
+      const query = parsedUrl.search; // includes ?si=...
+      return `https://www.youtube.com/embed/${videoId}${query}`;
+    } catch (error) {
+      console.error("Invalid URL:", url);
+      return url; // return as-is if something fails
+    }
+  }

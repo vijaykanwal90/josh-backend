@@ -165,6 +165,7 @@ const createCourse = asynchHandler(async (req, res) => {
       whoShouldEnroll,
       isTrending,
       isOffline,
+      courseIntrovideo
     } = req.body;
 
     console.log("Creating course...");
@@ -216,7 +217,9 @@ const createCourse = asynchHandler(async (req, res) => {
     const localCertificatePath = certificateFile
       ? `/fileStore/${certificateFile.filename}`
       : null;
-
+      if(req.body.courseIntrovideo !==undefined){
+        courseIntrovideo = convertToEmbedUrl(req.body.courseIntrovideo);
+      }
     // Create course
     const course = new Course({
       title,
