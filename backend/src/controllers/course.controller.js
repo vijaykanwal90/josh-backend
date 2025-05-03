@@ -217,7 +217,7 @@ const createCourse = asynchHandler(async (req, res) => {
     const localCertificatePath = certificateFile
       ? `/fileStore/${certificateFile.filename}`
       : null;
-      if(req.body.courseIntrovideo !==undefined){
+      if(courseIntrovideo !==undefined){
         courseIntrovideo = convertToEmbedUrl(req.body.courseIntrovideo);
       }
     // Create course
@@ -240,6 +240,7 @@ const createCourse = asynchHandler(async (req, res) => {
       isOffline: isOffline === "true",
       pdfPath: localPdfPath,
       certificatePath: localCertificatePath,
+      courseIntrovideo,
     });
 
     console.log("Saving course...");
