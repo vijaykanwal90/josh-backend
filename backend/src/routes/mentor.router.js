@@ -25,7 +25,9 @@ router.route("/add")
   );
 
 // Update a mentor by ID
-router.put("/update/:id", updateMentor);
+router.route("/update/:id").patch(upload.single('mentorImage'),
+userAuth,
+checkRole(['admin']), updateMentor);
 
 // Delete a mentor by ID
 router.delete("/delete/:id", deleteMentor);

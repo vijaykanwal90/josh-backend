@@ -127,27 +127,92 @@ const addCourseToMentor = asynchHandler(async (req, res) => {
   });
   
 // Update Mentor
+// const updateMentor = asynchHandler(async (req, res) => {
+//     try {
+//         console.log("updating mentor")
+//         const { id } = req.params;
+//         const { name, email, about, mobilenumber, socialLinks, position } = req.body;
+//         console.log(req.body)
+//         const mentor = await Mentor.findByIdAndUpdate(
+//             id,
+//             { name, email, about, mobilenumber, socialLinks, position },
+//             { new: true, runValidators: true }
+//         );
+
+//         if (!mentor) {
+//             throw new ApiError(404, "Mentor not found");
+//         }
+
+//         res.status(200).json(new ApiResponse(200, { mentor }, "Mentor updated successfully"));
+//     } catch (error) {
+//         console.log(error);
+//         throw new ApiError(500, "Internal server error");
+//     }
+// });
+
+
 const updateMentor = asynchHandler(async (req, res) => {
     try {
-        const { id } = req.params;
-        const { name, email, about, mobilenumber, socialLinks, position } = req.body;
-
-        const mentor = await Mentor.findByIdAndUpdate(
-            id,
-            { name, email, about, mobilenumber, socialLinks, position },
-            { new: true, runValidators: true }
-        );
-
-        if (!mentor) {
-            throw new ApiError(404, "Mentor not found");
+      console.log("updating mentor");
+      const { id } = req.params;
+  
+      const { name, email, about, mobileNumber, socialLinks, position } = req.body;
+  
+      console.log("mobileNumber:", mobileNumber);
+      console.log("raw socialLinks:", socialLinks);
+  
+      // Prepare update data
+      let mentorData = {
+        name,
+        email,
+        about,
+        mobileNumber,
+        position,
+      };
+  
+      // ✅ Fix: Parse socialLinks string to an array of objects
+      if (socialLinks) {
+        try {
+          const parsedLinks = JSON.parse(socialLinks);
+          if (Array.isArray(parsedLinks)) {
+            mentorData.socialLinks = parsedLinks.filter(
+              (linkObj) =>
+                typeof linkObj === "object" &&
+                "link" in linkObj &&
+                "name" in linkObj
+            );
+          } else {
+            mentorData.socialLinks = [];
+          }
+        } catch (err) {
+          console.error("Error parsing socialLinks:", err.message);
+          mentorData.socialLinks = [];
         }
-
-        res.status(200).json(new ApiResponse(200, { mentor }, "Mentor updated successfully"));
+      }
+  
+      // ✅ Handle image upload
+      if (req.file) {
+        mentorData.profileImage = req.file.path; // or whatever field you're using
+      }
+  
+      const mentor = await Mentor.findByIdAndUpdate(id, mentorData, {
+        new: true,
+        runValidators: true,
+      });
+  
+      if (!mentor) {
+        throw new ApiError(404, "Mentor not found");
+      }
+  
+      res
+        .status(200)
+        .json(new ApiResponse(200, { mentor }, "Mentor updated successfully"));
     } catch (error) {
-        console.log(error);
-        throw new ApiError(500, "Internal server error");
+      console.error("Update Error:", error);
+      throw new ApiError(500, "Internal server error");
     }
-});
+  });
+  
 
 // Delete Mentor
 const deleteMentor = asynchHandler(async (req, res) => {

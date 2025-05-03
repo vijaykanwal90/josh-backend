@@ -518,6 +518,8 @@ const updateCourse = asynchHandler(async (req, res) => {
 
   try {
     // Validate the ID format
+  console.log("this is id")
+    console.log(id)
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res
         .status(400)
