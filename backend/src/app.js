@@ -13,7 +13,7 @@ import bundlerouter from './routes/bundle.router.js'
 import cors from 'cors'
 import studentTestimonialRouter from "./routes/studentTestimonial.router.js";
 import privacyRouter from './routes/privacy.router.js';
-import webinar from './routes/webinar.router.js';
+
 import mentorrouter from './routes/mentor.router.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
