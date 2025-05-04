@@ -47,27 +47,61 @@ const createBundle = asynchHandler(async (req, res) => {
 // Update an existing bundle
 const updateBundle = asynchHandler(async (req, res) => {
   const { id } = req.params;
-  // console.log(id);
+
+  // Validate MongoDB ObjectId
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Invalid bundle ID format"));
+  }
+
   try {
-    const updatedBundle = await Bundle.findByIdAndUpdate(id, req.body, {
+    const existingBundle = await Bundle.findById(id);
+
+    if (!existingBundle) {
+      throw new ApiError(404, "Bundle not found");
+    }
+
+    // Collect updated fields
+    const { bundleName, description, price, whyBundle,isSpecial,discount,hasDiscount } = req.body;
+
+    const updates = {};
+
+    if (bundleName !== undefined) updates.bundleName = bundleName;
+    if (description !== undefined) updates.description = description;
+    if (price !== undefined) updates.price = price;
+    if (whyBundle !== undefined) updates.whyBundle = whyBundle;
+    if (isSpecial !== undefined) updates.isSpecial = isSpecial;
+    if (discount !== undefined) updates.discount = discount;
+    if (hasDiscount !== undefined) updates.hasDiscount = hasDiscount;
+    if(discount ||  hasDiscount){
+      updates.price = price - (price * discount) / 100;
+    }
+
+
+
+    // Handle optional image file
+    const bundleImage = req.files?.bundleImage?.[0];
+    if (bundleImage) {
+      console.log("New bundle image:", bundleImage);
+      updates.bundleImage = `/fileStore/${bundleImage.filename}`;
+    }
+
+    const updatedBundle = await Bundle.findByIdAndUpdate(id, updates, {
       new: true,
       runValidators: true,
     });
 
-    if (!updatedBundle) {
-      throw new ApiError(404, "Bundle not found");
-    }
-
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(200, { updatedBundle }, "Bundle updated successfully")
-      );
+    return res.status(200).json(
+      new ApiResponse(200, { bundle: updatedBundle }, "Bundle updated successfully")
+    );
   } catch (error) {
-    console.error(error);
-    throw new ApiError(500, "Internal server error", error);
+    console.error("Update bundle error:", error);
+    throw new ApiError(500, "Internal server error");
   }
 });
+
+
 const getBundles = asynchHandler(async (req, res) => {
   const { bundleName } = req.query;
 
@@ -299,6 +333,7 @@ const addCourseToBundle = asynchHandler(async(req,res)=>{
     try {
         const {bundleId} = req.body;
         const {courses} = req.body;
+        console.log("hello from the add course")
         const bundle = await Bundle.findById(bundleId);
         if(!bundle){
             throw new ApiError(404,"Bundle not found");
