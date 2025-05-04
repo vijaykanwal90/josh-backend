@@ -39,7 +39,7 @@ const webinarSchema = new Schema({
     },
     status: {
         type: String,
-        enum: ['scheduled', 'live', 'completed', 'cancelled'], // Fix typo
+        enum: ['scheduled', 'live', 'completed', 'cancelled'],
         default: 'scheduled',
     },
     categories:{
@@ -50,6 +50,23 @@ const webinarSchema = new Schema({
     link:{
         type: String,
     },
+    // Add agenda array to schema
+    agenda: [
+        {
+            title: {
+                type: String,
+                required: [true, 'Agenda title is required']
+            },
+            description: {
+                type: String,
+                required: [true, 'Agenda description is required']
+            },
+            timeToComplete: {
+                type: String,
+                required: [true, 'Time to complete is required']
+            }
+        }
+    ],
     webinarUsers: [
         {
             name: {

@@ -18,7 +18,6 @@ import mentorrouter from './routes/mentor.router.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path';
-import webinar from './routes/webinar.router.js';
 
 const app = express();
 const URL = process.env.FRONTEND_URL;
