@@ -517,7 +517,6 @@ const updateCourse = asynchHandler(async (req, res) => {
 
   try {
     
-    console.log("updateing course ")
     // Validate the ID format
   console.log("this is id")
     console.log(courseId)

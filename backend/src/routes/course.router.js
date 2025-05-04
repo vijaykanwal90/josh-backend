@@ -19,18 +19,17 @@ import {
 
 const router = Router();
 
-// router.use(userAuth);
 
 router
   .route("/createCourse")
   .post(
+    userAuth,
+    checkRole(["admin"]),
     upload.fields([
       { name: "pdfFile", maxCount: 1 },
       { name: "certificateFile", maxCount: 1 },
       { name: "imageFile", maxCount: 1 }
     ]),
-    userAuth,
-    checkRole(["admin"]),
     createCourse
   );
 
