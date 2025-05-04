@@ -28,7 +28,7 @@ const getUser = asynchHandler(async (req, res) => {
 const getUserCourses = asynchHandler(async (req, res) => {
      const { _id } = req.params;
     try {
-        console.log("get courses")
+        console.log("get courses and bundles")
         const user = await User.findById(_id)
         .select('name email courses bundles')
         .populate('courses')

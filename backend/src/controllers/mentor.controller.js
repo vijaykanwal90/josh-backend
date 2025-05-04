@@ -77,7 +77,7 @@ const getMentorById = asynchHandler(async (req, res) => {
     const {mentorId} = req.params;
     try {
         console.log(mentorId)
-        const mentor = await Mentor.findById(mentorId);
+        const mentor = await Mentor.findById(mentorId).populate("courses");
         if (!mentor) {
             throw new ApiError(404, "Mentor not found");
         }
@@ -97,6 +97,7 @@ const addCourseToMentor = asynchHandler(async (req, res) => {
     const { mentorId, courseId } = req.body;
   
     // Validate mentor and course
+    console.log("assigning course to mentor");
     const mentor = await Mentor.findById(mentorId);
     const course = await Course.findById(courseId);
   
@@ -118,48 +119,152 @@ const addCourseToMentor = asynchHandler(async (req, res) => {
     await mentor.save();
   
     // Assign mentor to course
-    course.mentors.push(mentorId);
+    course.mentor.push(mentorId);
     await course.save();
   
     res.status(200).json(
       new ApiResponse(200, { mentor }, "✅ Course assigned to mentor successfully")
     );
   });
+  const removeCourseFromMentor = asynchHandler(async (req, res) => {
+    const { mentorId, courseId } = req.body;
+  
+    console.log("Removing course from mentor");
+  
+    const mentor = await Mentor.findById(mentorId);
+    const course = await Course.findById(courseId);
+  
+    if (!mentor) {
+      throw new ApiError(404, "Mentor not found");
+    }
+  
+    if (!course) {
+      throw new ApiError(404, "Course not found");
+    }
+  
+    if (!mentor.courses.includes(courseId)) {
+      throw new ApiError(400, "Course not assigned to this mentor");
+    }
+  
+    // ✅ Remove mentorId from course
+    await Course.updateOne(
+      { _id: courseId },
+      { $pull: { mentors: mentorId } }
+    );
+  
+    // ✅ Remove courseId from mentor
+    await Mentor.updateOne(
+      { _id: mentorId },
+      { $pull: { courses: courseId } }
+    );
+  
+    res.status(200).json(new ApiResponse(200, null, "Course removed from mentor successfully"));
+  });
   
 // Update Mentor
+// const updateMentor = asynchHandler(async (req, res) => {
+//     try {
+//         console.log("updating mentor")
+//         const { id } = req.params;
+//         const { name, email, about, mobilenumber, socialLinks, position } = req.body;
+//         console.log(req.body)
+//         const mentor = await Mentor.findByIdAndUpdate(
+//             id,
+//             { name, email, about, mobilenumber, socialLinks, position },
+//             { new: true, runValidators: true }
+//         );
+
+//         if (!mentor) {
+//             throw new ApiError(404, "Mentor not found");
+//         }
+
+//         res.status(200).json(new ApiResponse(200, { mentor }, "Mentor updated successfully"));
+//     } catch (error) {
+//         console.log(error);
+//         throw new ApiError(500, "Internal server error");
+//     }
+// });
+
+
 const updateMentor = asynchHandler(async (req, res) => {
     try {
-        const { id } = req.params;
-        const { name, email, about, mobilenumber, socialLinks, position } = req.body;
-
-        const mentor = await Mentor.findByIdAndUpdate(
-            id,
-            { name, email, about, mobilenumber, socialLinks, position },
-            { new: true, runValidators: true }
-        );
-
-        if (!mentor) {
-            throw new ApiError(404, "Mentor not found");
+      console.log("updating mentor");
+      const { id } = req.params;
+  
+      const { name, email, about, mobileNumber, socialLinks, position } = req.body;
+  
+      console.log("mobileNumber:", mobileNumber);
+      console.log("raw socialLinks:", socialLinks);
+  
+      // Prepare update data
+      let mentorData = {
+        name,
+        email,
+        about,
+        mobileNumber,
+        position,
+      };
+  
+      // ✅ Fix: Parse socialLinks string to an array of objects
+      if (socialLinks) {
+        try {
+          const parsedLinks = JSON.parse(socialLinks);
+          if (Array.isArray(parsedLinks)) {
+            mentorData.socialLinks = parsedLinks.filter(
+              (linkObj) =>
+                typeof linkObj === "object" &&
+                "link" in linkObj &&
+                "name" in linkObj
+            );
+          } else {
+            mentorData.socialLinks = [];
+          }
+        } catch (err) {
+          console.error("Error parsing socialLinks:", err.message);
+          mentorData.socialLinks = [];
         }
-
-        res.status(200).json(new ApiResponse(200, { mentor }, "Mentor updated successfully"));
+      }
+  
+      // ✅ Handle image upload
+      if (req.file) {
+        mentorData.profileImage = req.file.path; // or whatever field you're using
+      }
+  
+      const mentor = await Mentor.findByIdAndUpdate(id, mentorData, {
+        new: true,
+        runValidators: true,
+      });
+  
+      if (!mentor) {
+        throw new ApiError(404, "Mentor not found");
+      }
+  
+      res
+        .status(200)
+        .json(new ApiResponse(200, { mentor }, "Mentor updated successfully"));
     } catch (error) {
-        console.log(error);
-        throw new ApiError(500, "Internal server error");
+      console.error("Update Error:", error);
+      throw new ApiError(500, "Internal server error");
     }
-});
+  });
+  
 
 // Delete Mentor
 const deleteMentor = asynchHandler(async (req, res) => {
     try {
         const { id } = req.params;
-
+        console.log("mentor deletion ")
         const mentor = await Mentor.findByIdAndDelete(id);
 
         if (!mentor) {
             throw new ApiError(404, "Mentor not found");
         }
-
+        // Optionally, you can also remove the mentor from any courses they were assigned to
+        await Course.updateMany(
+            { mentors: id },
+            { $pull: { mentors: id } }
+        );
+        console.log("mentor deleted")
         res.status(200).json(new ApiResponse(200, null, "Mentor deleted successfully"));
     } catch (error) {
         console.log(error);
@@ -167,4 +272,4 @@ const deleteMentor = asynchHandler(async (req, res) => {
     }
 });
 
-export { addMentor, updateMentor, deleteMentor, addCourseToMentor , getMentors , getMentorById };
+export { addMentor, updateMentor, deleteMentor, addCourseToMentor , getMentors , getMentorById, removeCourseFromMentor };

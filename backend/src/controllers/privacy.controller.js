@@ -33,8 +33,10 @@ const getAll = async(req,res)=>{
 }
 const updatePrivacy = async (req, res) => {
     try {
+        
         const { contentType } = req.query;
         const { content, renderedContent } = req.body;
+        console.log("updating privacy",contentType)
         const privacy = await Privacy.findOneAndUpdate(
             { contentType },
             { content, renderedContent },

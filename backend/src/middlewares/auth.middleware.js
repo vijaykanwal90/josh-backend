@@ -21,6 +21,7 @@ const userAuth = asynchHandler(async (req, res, next) => {
             throw new ApiError(404, "User not found");
         }
         req.user= user;
+        console.log("user auth is clear")
         next();
 
      }

@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 // Define the upload directory path
 const uploadPath = path.join(__dirname, "../../../..", "josh-web/client/public/fileStore");
-
+console.log("multer")
 // Ensure that the directory exists (create it if it doesn't exist)
 if (!fs.existsSync(uploadPath)) {
   fs.mkdirSync(uploadPath, { recursive: true });
