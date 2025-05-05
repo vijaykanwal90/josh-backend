@@ -1,5 +1,4 @@
-
-import Gallery from "../models/gallery.model.js";
+import { Gallery } from "../models/gallery.model.js";
 
 const getAllGalleries = async (req, res) => {
     try {

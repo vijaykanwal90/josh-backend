@@ -2,6 +2,7 @@ import { Router } from "express";
 import { userAuth } from "../middlewares/auth.middleware.js";
 import { checkRole } from "../middlewares/role.middleware.js";
 import {getAllGalleries, createGallery, updateGallery, deleteGalleryImage } from "../controllers/gallery.contoller.js";
+import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 router.use(userAuth);
