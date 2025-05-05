@@ -57,7 +57,6 @@ app.use('/api/v1/discount',discountrouter);
 app.use('/api/v1/blog', blogrouter);
 app.use("/api/v1/mentors", mentorrouter);
 app.use('/api/v1/webinar', webinar);
-
 app.use("/api/v1/testimonials", testimonialRouter);
 app.use("/api/v1/studenttestimonials", studentTestimonialRouter);
 app.use('/api/v1/popup',popuprouter);
