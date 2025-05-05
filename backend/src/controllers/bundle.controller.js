@@ -257,13 +257,15 @@ const getAllBundles = asynchHandler(async (req, res) => {
 const assignBundle = asynchHandler(async (req, res) => {
   const bundleId = req.body.bundleId;
   const userId = req.body.studentId;
+  console.log(bundleId);
+  console.log(userId);
 
   try {
     if (
       !mongoose.Types.ObjectId.isValid(bundleId) ||
       !mongoose.Types.ObjectId.isValid(userId)
     ) {
-      throw new ApiError(400, "Invalid Course or Student ID");
+      throw new ApiError(400, "Invalid Bundle or Student ID");
     }
 
     const bundle = await Bundle.findById(bundleId);
@@ -283,22 +285,21 @@ const assignBundle = asynchHandler(async (req, res) => {
     const oneLevelUser = await User.findOne({
       sharableReferralCode: user.referredByCode,
     });
-    if (!oneLevelUser) throw new ApiError(404, "Referrer user not found");
-
-    const bonus = bundle.price * 0.25;
-    oneLevelUser.total_income += bonus;
-    if (!oneLevelUser.myTeam.some(id => id.toString() === user._id.toString())) {
-      oneLevelUser.myTeam.push(user._id);
-      oneLevelUser.totalTeam += 1;
-    }
-    oneLevelUser.incomeHistory.push({
-      amount: bonus,
-      date: Date.now(),
-      from: user._id,
-    });
-    await oneLevelUser.save();
-
-    const secondLevelUser = oneLevelUser?.referredByCode
+    if (oneLevelUser) {
+      // throw new ApiError(404, "Referrer user not found");
+      const bonus = bundle.price * 0.25;
+      oneLevelUser.total_income += bonus;
+      if (!oneLevelUser.myTeam.some(id => id.toString() === user._id.toString())) {
+        oneLevelUser.myTeam.push(user._id);
+        oneLevelUser.totalTeam += 1;
+      }
+      oneLevelUser.incomeHistory.push({
+        amount: bonus,
+        date: Date.now(),
+        from: user._id,
+      });
+      await oneLevelUser.save();
+      const secondLevelUser = oneLevelUser?.referredByCode
       ? await User.findOne({ sharableReferralCode: oneLevelUser.referredByCode })
       : null;
 
@@ -316,6 +317,10 @@ const assignBundle = asynchHandler(async (req, res) => {
       });
       await secondLevelUser.save();
     }
+    }
+   
+
+   
 
     await Promise.all([bundle.save(), user.save()]);
 

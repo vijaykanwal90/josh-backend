@@ -167,13 +167,13 @@ const createCourse = asynchHandler(async (req, res) => {
       isOffline
     } = req.body;
     let { courseIntrovideo } = req.body;
-    console.log("Creating course...");
+    // console.log("Creating course...");
 
     // Parse videos if sent as JSON string
     let videos = [];
     if (req.body.videos) {
       try {
-        console.log("Parsing videos...");
+        // console.log("Parsing videos...");
         const parsed = JSON.parse(req.body.videos);
         if (Array.isArray(parsed)) {
           videos = parsed;
