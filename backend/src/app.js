@@ -18,6 +18,8 @@ import mentorrouter from './routes/mentor.router.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path';
+import webinar from './routes/webinar.router.js';
+import galleryrouter from './routes/Gallery.router.js'
 
 const app = express();
 const URL = process.env.FRONTEND_URL;
@@ -56,10 +58,10 @@ app.use('/api/v1/discount',discountrouter);
 app.use('/api/v1/blog', blogrouter);
 app.use("/api/v1/mentors", mentorrouter);
 app.use('/api/v1/webinar', webinar);
-
 app.use("/api/v1/testimonials", testimonialRouter);
 app.use("/api/v1/studenttestimonials", studentTestimonialRouter);
 app.use('/api/v1/popup',popuprouter);
 app.use('/api/v1/privacy', privacyRouter);
+ app.use('/api/v1/gallery', galleryrouter);
 
 export { app };

@@ -46,12 +46,11 @@ const getUserCourses = asynchHandler(async (req, res) => {
 const updateUser = asynchHandler(async (req, res) => {
     try {
         const  id  = req.user._id;
-        const {name, mobilenumber,email} = req.body;
+        const {name,email} = req.body;
         
-        console.log(name, mobilenumber, email)
+        console.log(name,email)
         const user = await User.findByIdAndUpdate(id, {
             name,
-            mobilenumber,
             email
         }, {
             new: true,

@@ -167,13 +167,13 @@ const createCourse = asynchHandler(async (req, res) => {
       isOffline
     } = req.body;
     let { courseIntrovideo } = req.body;
-    console.log("Creating course...");
+    // console.log("Creating course...");
 
     // Parse videos if sent as JSON string
     let videos = [];
     if (req.body.videos) {
       try {
-        console.log("Parsing videos...");
+        // console.log("Parsing videos...");
         const parsed = JSON.parse(req.body.videos);
         if (Array.isArray(parsed)) {
           videos = parsed;
@@ -867,9 +867,10 @@ const handleReferralIncentive = async (user, course) => {
 
     oneLevelUser.total_income += bonus;
     oneLevelUser.incentive += bonus;
+    if(!oneLevelUser.myTeam.includes(user._id)){
     oneLevelUser.totalTeam += 1;
     oneLevelUser.myTeam.push(user._id   );
-
+    }
     oneLevelUser.incomeHistory.push({
       amount: bonus,
       date: Date.now(),

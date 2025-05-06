@@ -10,7 +10,6 @@ router.route('/getUsers').get(checkRole(['admin']),getAllUser)
 router.route('/:_id/getCourses').get(userAuth,getUserCourses);
 router.route('/getIncomeHistory/:userId').get(userAuth,getUserIncomeHistory );
 router.route('/').get(getUser)
-
-router.route('/').patch(checkRole(['admin']),updateUser);
+router.route('/').patch(userAuth,updateUser);
 
 export default router;
