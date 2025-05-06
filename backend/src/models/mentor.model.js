@@ -1,7 +1,5 @@
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
-import { asynchHandler } from '../utils/AsynchHandler.js';
-import jwt from 'jsonwebtoken';
+
 const mentorSchema = new mongoose.Schema({
     name: {
         type: String,
