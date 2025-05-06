@@ -81,7 +81,7 @@ const addWebinar = asynchHandler(async (req, res) => {
                 if (error instanceof ApiError) {
                     throw error;
                 }
-                throw new ApiError(400, "Invalid agenda format");
+                throw new ApiError(400, error.message || "Invalid agenda format");
             }
         }
         
@@ -136,7 +136,7 @@ const getAllWebinars = asynchHandler(async (req, res) => {
             ));
     } catch (error) {
         console.log(error);
-        throw new ApiError(500, "Internal server error");
+        throw new ApiError(500, error.message || "Internal server error");
     }
 });
 
@@ -157,7 +157,7 @@ const getSingleWebinar = asynchHandler(async (req, res) => {
             ));
     } catch (error) {
         console.log(error);
-        throw new ApiError(500, "Internal server error");
+        throw new ApiError(500, error.message || "Internal server error");
     }
 });
 
@@ -232,7 +232,7 @@ const updateWebinar = asynchHandler(async (req, res) => {
                 if (error instanceof ApiError) {
                     throw error;
                 }
-                throw new ApiError(400, "Invalid agenda format");
+                throw new ApiError(400, error.message || "Invalid agenda format");
             }
         }
         
@@ -289,7 +289,7 @@ const deleteWebinar = asynchHandler(async (req, res) => {
             ));
     } catch (error) {
         console.log(error);
-        throw new ApiError(500, "Internal server error");
+        throw new ApiError(500, error.message || "Internal server error");
     }
 });
 
@@ -449,7 +449,7 @@ const registerForWebinar = asynchHandler(async (req, res) => {
             ));
     } catch (error) {
         console.log(error);
-        throw new ApiError(500, "Internal server error");
+        throw new ApiError(500, error.message || "Internal server error");
     }
 });
 
@@ -482,7 +482,7 @@ const setWebinarLink = asynchHandler(async (req, res) => {
             ));
     } catch (error) {
         console.log(error);
-        throw new ApiError(500, "Internal server error");
+        throw new ApiError(500, error.message || "Internal server error");
     }
 });
 
@@ -513,7 +513,7 @@ const sendMailToAllUsers = asynchHandler(async (req, res) => {
             ));
     } catch (error) {
         console.log(error);
-        throw new ApiError(500, "Internal server error");
+        throw new ApiError(500, error.message ||"Internal server error");
     }
 });
 
@@ -577,7 +577,7 @@ const exportWebinarUsersToCSV = asynchHandler(async (req, res) => {
         console.error('Export error:', error);
         res.status(500).json({
             success: false,
-            message: "Failed to export users",
+            message: error.message || "Failed to export users",
             error: error.message
         });
     }
