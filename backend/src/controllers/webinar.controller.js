@@ -12,7 +12,7 @@ import mongoose from 'mongoose';
 // Add new webinar
 const addWebinar = asynchHandler(async (req, res) => {
     try {
-        const { title, description, categories, date, time, duration, presenterName, presenterRole } = req.body;
+        const { title, description, categories, date, time, duration, presenterName, presenterRole, agenda } = req.body;
         
         const requiredFields = [
             { field: title, name: "Title" },
@@ -38,10 +38,58 @@ const addWebinar = asynchHandler(async (req, res) => {
         if (!req.files?.presenterImage) {
             throw new ApiError(400, "Presenter image is required");
         }
+
+        // Parse agenda JSON if it exists
+        let parsedAgenda = [];
+        if (agenda) {
+            try {
+                parsedAgenda = JSON.parse(agenda);
+                
+                // Validate agenda items
+                if (!Array.isArray(parsedAgenda) || parsedAgenda.length === 0) {
+                    throw new ApiError(400, "At least one agenda item is required");
+                }
+                
+                // Validate each agenda item
+                for (const item of parsedAgenda) {
+                    if (!item.title || !item.title.trim()) {
+                        throw new ApiError(400, "Agenda item title is required");
+                    }
+                    if (!item.description || !item.description.trim()) {
+                        throw new ApiError(400, "Agenda item description is required");
+                    }
+                    if (!item.timeToComplete || !item.timeToComplete.trim()) {
+                        throw new ApiError(400, "Agenda item time to complete is required");
+                    }
+                    
+                    // Validate time format (HH:MM)
+                    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+                    if (!timeRegex.test(item.timeToComplete)) {
+                        throw new ApiError(400, "Time to complete must be in HH:MM format");
+                    }
+                }
+                
+                // Check for duplicate titles
+                const titles = new Set();
+                for (const item of parsedAgenda) {
+                    if (titles.has(item.title.trim())) {
+                        throw new ApiError(400, "Duplicate agenda item titles are not allowed");
+                    }
+                    titles.add(item.title.trim());
+                }
+            } catch (error) {
+                if (error instanceof ApiError) {
+                    throw error;
+                }
+                throw new ApiError(400, error.message || "Invalid agenda format");
+            }
+        }
+        
         const thumbnailLocalPath = req.files?.thumbnail?.[0]?.path;
         const presenterImageLocalPath = req.files?.presenterImage?.[0]?.path;
         const uploadedThumbnail = await uploadCloudinary(thumbnailLocalPath);
         const uploadedPresenterImage = await uploadCloudinary(presenterImageLocalPath);
+        
         const webinar = new Webinar({
             title,
             description,
@@ -52,8 +100,10 @@ const addWebinar = asynchHandler(async (req, res) => {
             thumbnail: uploadedThumbnail.url,
             presenterName,
             presenterRole,
-            presenterImage: uploadedPresenterImage.url
+            presenterImage: uploadedPresenterImage.url,
+            agenda: parsedAgenda // Add agenda to the webinar
         });
+        
         await webinar.save();
 
         res.status(200)
@@ -86,7 +136,7 @@ const getAllWebinars = asynchHandler(async (req, res) => {
             ));
     } catch (error) {
         console.log(error);
-        throw new ApiError(500, "Internal server error");
+        throw new ApiError(500, error.message || "Internal server error");
     }
 });
 
@@ -107,7 +157,7 @@ const getSingleWebinar = asynchHandler(async (req, res) => {
             ));
     } catch (error) {
         console.log(error);
-        throw new ApiError(500, "Internal server error");
+        throw new ApiError(500, error.message || "Internal server error");
     }
 });
 
@@ -116,12 +166,13 @@ const updateWebinar = asynchHandler(async (req, res) => {
     try {
         let isRescheduled = false;
         const webinarId = req.params.id;
-        const { title, description, categories, date, time, duration, presenterName, presenterRole } = req.body;
+        const { title, description, categories, date, time, duration, presenterName, presenterRole, agenda } = req.body;
 
         const webinar = await Webinar.findById(webinarId);
         if (!webinar) {
             throw new ApiError(404, "Webinar not found");
         }
+        
         if (title) webinar.title = title;
         if (description) webinar.description = description;
         if (categories) webinar.categories = categories;
@@ -136,6 +187,55 @@ const updateWebinar = asynchHandler(async (req, res) => {
         if (duration) webinar.duration = duration;
         if (presenterName) webinar.presenterName = presenterName;
         if (presenterRole) webinar.presenterRole = presenterRole;
+        
+        // Update agenda if provided
+        if (agenda) {
+            try {
+                const parsedAgenda = JSON.parse(agenda);
+                
+                // Validate agenda items
+                if (!Array.isArray(parsedAgenda) || parsedAgenda.length === 0) {
+                    throw new ApiError(400, "At least one agenda item is required");
+                }
+                
+                // Validate each agenda item
+                for (const item of parsedAgenda) {
+                    if (!item.title || !item.title.trim()) {
+                        throw new ApiError(400, "Agenda item title is required");
+                    }
+                    if (!item.description || !item.description.trim()) {
+                        throw new ApiError(400, "Agenda item description is required");
+                    }
+                    if (!item.timeToComplete || !item.timeToComplete.trim()) {
+                        throw new ApiError(400, "Agenda item time to complete is required");
+                    }
+                    
+                    // Validate time format (HH:MM)
+                    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+                    if (!timeRegex.test(item.timeToComplete)) {
+                        throw new ApiError(400, "Time to complete must be in HH:MM format");
+                    }
+                }
+                
+                // Check for duplicate titles
+                const titles = new Set();
+                for (const item of parsedAgenda) {
+                    if (titles.has(item.title.trim())) {
+                        throw new ApiError(400, "Duplicate agenda item titles are not allowed");
+                    }
+                    titles.add(item.title.trim());
+                }
+                
+                // Update the agenda
+                webinar.agenda = parsedAgenda;
+            } catch (error) {
+                if (error instanceof ApiError) {
+                    throw error;
+                }
+                throw new ApiError(400, error.message || "Invalid agenda format");
+            }
+        }
+        
         if (req.files?.thumbnail) {
             const thumbnailLocalPath = req.files.thumbnail[0].path;
             const uploadedThumbnail = await uploadCloudinary(thumbnailLocalPath);
@@ -147,7 +247,6 @@ const updateWebinar = asynchHandler(async (req, res) => {
             webinar.presenterImage = uploadedPresenterImage.url;
         }
         await webinar.save();
-
 
         if (isRescheduled) {
             await sendMail({
@@ -166,7 +265,7 @@ const updateWebinar = asynchHandler(async (req, res) => {
             "Webinar updated successfully"
             ));
         
-    }catch (error) {
+    } catch (error) {
         console.log(error);
         throw new ApiError(500, "Internal server error");
     }
@@ -190,7 +289,7 @@ const deleteWebinar = asynchHandler(async (req, res) => {
             ));
     } catch (error) {
         console.log(error);
-        throw new ApiError(500, "Internal server error");
+        throw new ApiError(500, error.message || "Internal server error");
     }
 });
 
@@ -350,7 +449,7 @@ const registerForWebinar = asynchHandler(async (req, res) => {
             ));
     } catch (error) {
         console.log(error);
-        throw new ApiError(500, "Internal server error");
+        throw new ApiError(500, error.message || "Internal server error");
     }
 });
 
@@ -383,7 +482,7 @@ const setWebinarLink = asynchHandler(async (req, res) => {
             ));
     } catch (error) {
         console.log(error);
-        throw new ApiError(500, "Internal server error");
+        throw new ApiError(500, error.message || "Internal server error");
     }
 });
 
@@ -414,7 +513,7 @@ const sendMailToAllUsers = asynchHandler(async (req, res) => {
             ));
     } catch (error) {
         console.log(error);
-        throw new ApiError(500, "Internal server error");
+        throw new ApiError(500, error.message ||"Internal server error");
     }
 });
 
@@ -478,7 +577,7 @@ const exportWebinarUsersToCSV = asynchHandler(async (req, res) => {
         console.error('Export error:', error);
         res.status(500).json({
             success: false,
-            message: "Failed to export users",
+            message: error.message || "Failed to export users",
             error: error.message
         });
     }
