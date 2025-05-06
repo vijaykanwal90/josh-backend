@@ -867,9 +867,10 @@ const handleReferralIncentive = async (user, course) => {
 
     oneLevelUser.total_income += bonus;
     oneLevelUser.incentive += bonus;
+    if(!oneLevelUser.myTeam.includes(user._id)){
     oneLevelUser.totalTeam += 1;
     oneLevelUser.myTeam.push(user._id   );
-
+    }
     oneLevelUser.incomeHistory.push({
       amount: bonus,
       date: Date.now(),
