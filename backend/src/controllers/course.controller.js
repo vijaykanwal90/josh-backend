@@ -856,7 +856,7 @@ const handleReferralIncentive = async (user, course) => {
   const oneLevelUser = await User.findOne({
     sharableReferralCode: user.referredByCode,
   });
-  console.log("assign refereal amount")
+  // console.log("assign refereal amount")
    if(!oneLevelUser){
     console.log("user does not exists")
    }
