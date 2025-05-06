@@ -300,9 +300,13 @@ const assignBundle = asynchHandler(async (req, res) => {
       const secondLevelUser = oneLevelUser?.referredByCode
       ? await User.findOne({ sharableReferralCode: oneLevelUser.referredByCode })
       : null;
-
+//  second - akshay 
+//  onelevel- modi- 
+//  current- rahul
+//  vijay
+// vivek
     if (secondLevelUser) {
-      const bonus2 = bundle.price * 0.1;
+      const bonus2 = bundle.price * 0.3;
       secondLevelUser.total_income += bonus2;
       if (!secondLevelUser.myTeam.some(id => id.toString() === user._id.toString())) {
         secondLevelUser.myTeam.push(user._id);
