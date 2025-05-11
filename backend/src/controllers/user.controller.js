@@ -57,7 +57,7 @@ const updateUser = asynchHandler(async (req, res) => {
             runValidators: true
         });
 
-        console.log(user)
+        // console.log(user)
         if (!user) {
             console.log(error)
             throw new ApiError(404, "User not found");

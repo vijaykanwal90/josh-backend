@@ -279,7 +279,7 @@ const assignBundle = asynchHandler(async (req, res) => {
       throw new ApiError(400, "Bundle already assigned to user");
 
     user.bundles.push(bundleId);
-
+    user.canRefer = true;
     const oneLevelUser = await User.findOne({
       sharableReferralCode: user.referredByCode,
     });

@@ -806,6 +806,7 @@ const assignCourse = asynchHandler(async (req, res) => {
 
     // ✅ Handle referral incentive if course is trending
     if (course.isTrending) {
+      user.canRefer = true;
       await handleReferralIncentive(user, course);
     }
 
