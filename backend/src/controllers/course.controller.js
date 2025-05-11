@@ -799,10 +799,10 @@ const assignCourse = asynchHandler(async (req, res) => {
     }
 
     // ✅ Unlock all videos as previews
-    course.videos = course.videos.map((video) => ({
-      ...video.toObject(), // safer than _doc
-      isPreview: true,
-    }));
+    // course.videos = course.videos.map((video) => ({
+    //   ...video.toObject(), // safer than _doc
+    //   isPreview: true,
+    // }));
 
     // ✅ Handle referral incentive if course is trending
     if (course.isTrending) {

@@ -252,11 +252,106 @@ const getAllBundles = asynchHandler(async (req, res) => {
 //     throw new ApiError(500, "Error while assigning bundle", error);
 //   }
 // });
+// const assignBundle = asynchHandler(async (req, res) => {
+//   const bundleId = req.body.bundleId;
+//   const userId = req.body.studentId;
+//   console.log(bundleId);
+//   console.log(userId);
+
+//   try {
+//     if (
+//       !mongoose.Types.ObjectId.isValid(bundleId) ||
+//       !mongoose.Types.ObjectId.isValid(userId)
+//     ) {
+//       throw new ApiError(400, "Invalid Bundle or Student ID");
+//     }
+
+//     const bundle = await Bundle.findById(bundleId);
+//     if (!bundle) throw new ApiError(404, "Bundle not found");
+//     if (bundle.students.includes(userId))
+//       throw new ApiError(400, "User already assigned to course");
+
+//     bundle.students.push(userId);
+
+//     const user = await User.findById(userId);
+//     if (!user) throw new ApiError(404, "User not found");
+//     if (user.bundles.includes(bundleId))
+//       throw new ApiError(400, "Bundle already assigned to user");
+
+//     user.bundles.push(bundleId);
+//     const lowerBundles = await Bundle.find({
+//       price: { $lt: bundle.price }
+//     });
+//     lowerBundles.forEach((lowerBundle) => {
+//       if (!user.lowerBundles.includes(lowerBundle._id)) {
+//         user.bundles.push(lowerBundle._id);
+
+//       }
+//       if(!lowerBundle.students.includes(userId)){
+//         lowerBundle.students.push(userId);
+//       }
+//     });
+    
+//     console.log(lowerBundles)
+//     user.canRefer = true;
+//     const oneLevelUser = await User.findOne({
+//       sharableReferralCode: user.referredByCode,
+//     });
+//     if (oneLevelUser) {
+//       // throw new ApiError(404, "Referrer user not found");
+//       const bonus = bundle.price * 0.25;
+//       oneLevelUser.total_income += bonus;
+//       if (!oneLevelUser.myTeam.some(id => id.toString() === user._id.toString())) {
+//         oneLevelUser.myTeam.push(user._id);
+//         oneLevelUser.totalTeam += 1;
+//       }
+//       oneLevelUser.incomeHistory.push({
+//         amount: bonus,
+//         date: Date.now(),
+//         from: user._id,
+//       });
+//       await oneLevelUser.save();
+//       const secondLevelUser = oneLevelUser?.referredByCode
+//       ? await User.findOne({ sharableReferralCode: oneLevelUser.referredByCode })
+//       : null;
+// //  second - akshay 
+// //  onelevel- modi- 
+// //  current- rahul
+// //  vijay
+// // vivek
+//     if (secondLevelUser) {
+//       const bonus2 = bundle.price * 0.3;
+//       secondLevelUser.total_income += bonus2;
+//       if (!secondLevelUser.myTeam.some(id => id.toString() === user._id.toString())) {
+//         secondLevelUser.myTeam.push(user._id);
+//         secondLevelUser.totalTeam += 1;
+//       }
+//       secondLevelUser.incomeHistory.push({
+//         amount: bonus2,
+//         date: Date.now(),
+//         from: user._id,
+//       });
+//       await secondLevelUser.save();
+//     }
+//     }
+   
+
+   
+
+//     await Promise.all([bundle.save(), user.save()]);
+
+//     return res.status(200).json(
+//       new ApiResponse(200, { bundle, user }, "Bundle assigned successfully")
+//     );
+
+//   } catch (error) {
+//     console.error("Assign Bundle Error:", error);
+//     throw new ApiError(500, "Error while assigning bundle", error);
+//   }
+// });
 const assignBundle = asynchHandler(async (req, res) => {
-  const bundleId = req.body.bundleId;
-  const userId = req.body.studentId;
-  console.log(bundleId);
-  console.log(userId);
+  const { bundleId, studentId: userId } = req.body;
+  console.log("assignBundle called");
 
   try {
     if (
@@ -268,63 +363,126 @@ const assignBundle = asynchHandler(async (req, res) => {
 
     const bundle = await Bundle.findById(bundleId);
     if (!bundle) throw new ApiError(404, "Bundle not found");
-    if (bundle.students.includes(userId))
-      throw new ApiError(400, "User already assigned to course");
-
-    bundle.students.push(userId);
 
     const user = await User.findById(userId);
     if (!user) throw new ApiError(404, "User not found");
-    if (user.bundles.includes(bundleId))
-      throw new ApiError(400, "Bundle already assigned to user");
 
+    if (bundle.students.includes(userId)) {
+      throw new ApiError(400, "User already assigned to bundle");
+    }
+
+    if (user.bundles.includes(bundleId)) {
+      throw new ApiError(400, "Bundle already assigned to user");
+    }
+
+    // Assign main bundle
+    bundle.students.push(userId);
     user.bundles.push(bundleId);
+
+    // Assign lower-priced bundles
+    const lowerBundles = await Bundle.find({ price: { $lt: bundle.price } });
+
+    for (const lowerBundle of lowerBundles) {
+      const bundleAlreadyInUser = user.bundles.includes(lowerBundle._id);
+      const userAlreadyInBundle = lowerBundle.students.includes(userId);
+
+      if (!bundleAlreadyInUser) {
+        user.bundles.push(lowerBundle._id);
+      }
+
+      if (!userAlreadyInBundle) {
+        lowerBundle.students.push(userId);
+      }
+    }
+
+    // User becomes eligible to refer
     user.canRefer = true;
+
+    // 1st-level referral bonus
     const oneLevelUser = await User.findOne({
       sharableReferralCode: user.referredByCode,
     });
+
     if (oneLevelUser) {
-      // throw new ApiError(404, "Referrer user not found");
       const bonus = bundle.price * 0.25;
       oneLevelUser.total_income += bonus;
-      if (!oneLevelUser.myTeam.some(id => id.toString() === user._id.toString())) {
+
+      if (!oneLevelUser.myTeam.includes(user._id)) {
         oneLevelUser.myTeam.push(user._id);
         oneLevelUser.totalTeam += 1;
       }
+
       oneLevelUser.incomeHistory.push({
         amount: bonus,
         date: Date.now(),
         from: user._id,
       });
-      await oneLevelUser.save();
-      const secondLevelUser = oneLevelUser?.referredByCode
-      ? await User.findOne({ sharableReferralCode: oneLevelUser.referredByCode })
-      : null;
-//  second - akshay 
-//  onelevel- modi- 
-//  current- rahul
-//  vijay
-// vivek
-    if (secondLevelUser) {
-      const bonus2 = bundle.price * 0.3;
-      secondLevelUser.total_income += bonus2;
-      if (!secondLevelUser.myTeam.some(id => id.toString() === user._id.toString())) {
-        secondLevelUser.myTeam.push(user._id);
-        secondLevelUser.totalTeam += 1;
+
+      // 2nd-level referral bonus
+      const secondLevelUser = oneLevelUser.referredByCode
+        ? await User.findOne({ sharableReferralCode: oneLevelUser.referredByCode })
+        : null;
+
+      if (secondLevelUser) {
+        const bonus2 = bundle.price * 0.3;
+        secondLevelUser.total_income += bonus2;
+
+        if (!secondLevelUser.myTeam.includes(user._id)) {
+          secondLevelUser.myTeam.push(user._id);
+          secondLevelUser.totalTeam += 1;
+        }
+
+        secondLevelUser.incomeHistory.push({
+          amount: bonus2,
+          date: Date.now(),
+          from: user._id,
+        });
+
+        await secondLevelUser.save();
       }
-      secondLevelUser.incomeHistory.push({
-        amount: bonus2,
-        date: Date.now(),
-        from: user._id,
-      });
-      await secondLevelUser.save();
-    }
-    }
-   
 
-   
+      await oneLevelUser.save();
+    }
 
-    await Promise.all([bundle.save(), user.save()]);
+    await Promise.all([
+      user.save(),
+      bundle.save(),
+      ...lowerBundles.map(lb => lb.save()),
+    ]);
+    console.log(bundle);
+    console.log(user);
+
+    //  assignCourseFromBundle(userId, bundleId);
+    const updatedUser = await User.findById(userId)
+  .populate({
+    path: "bundles",
+    populate: {
+      path: "courses",
+      model: "Course"
+    }
+  });
+
+for (const bundle of updatedUser.bundles) {
+  for (const course of bundle.courses) {
+    // Add course to user if not already added
+    if (!updatedUser.courses.includes(course._id)) {
+      updatedUser.courses.push(course._id);
+    }
+    // if(course.videos.length > 0){
+    //   course.videos = course.videos.map((video) => ({
+    //     ...video.toObject(), // safer than _doc
+    //     isPreview: true,
+    //   }));
+    // }
+    // Add user to course if not already added
+    if (!course.students.includes(updatedUser._id)) {
+      course.students.push(updatedUser._id);
+      await course.save(); // save the updated course
+    }
+  }
+}
+
+await updatedUser.save();
 
     return res.status(200).json(
       new ApiResponse(200, { bundle, user }, "Bundle assigned successfully")
@@ -335,6 +493,8 @@ const assignBundle = asynchHandler(async (req, res) => {
     throw new ApiError(500, "Error while assigning bundle", error);
   }
 });
+
+
 
 const addCourseToBundle = asynchHandler(async(req,res)=>{
     try {

@@ -42,7 +42,26 @@ const getUserCourses = asynchHandler(async (req, res) => {
         throw new ApiError(500, "Internal server error");
     }
 });
-
+const getUserBundles = asynchHandler(async (req, res) => {
+    const { _id } = req.params;
+    try {
+        console.log("get courses and bundles")
+        const user = await User.findById(_id)
+        .select('name email courses bundles')
+        .populate({
+            path: 'bundles',
+            options: {sort:{price:1}}
+        })
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+        res.status(200).json(new ApiResponse(200, { user }, "User fetched successfully"));
+    } catch (error) {
+        console.log(error);
+        throw new ApiError(500, "Internal server error");
+        
+    }
+});
 const updateUser = asynchHandler(async (req, res) => {
     try {
         const  id  = req.user._id;
@@ -73,7 +92,7 @@ const updateUser = asynchHandler(async (req, res) => {
 const getAllUser = asynchHandler(async(req,res)=>{
     try {
         const users = await User.find();
-        console.log(users)
+        // console.log(users)
         if(!users){
             throw new ApiError(404, "Unable to get Users");
         }
@@ -104,4 +123,4 @@ const getUserIncomeHistory = asynchHandler(async (req, res) => {
 }
 );
 
-export { updateUser, getUser,getAllUser ,getUserCourses,getUserIncomeHistory};
+export { updateUser, getUser,getAllUser ,getUserCourses,getUserIncomeHistory,getUserBundles};

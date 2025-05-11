@@ -16,6 +16,7 @@ const registerUser = asynchHandler(async (req, res) => {
         // console.log(name);
         // console.log("this is referral code of who refer this user")
         // console.log(referralCode)
+        console.log("user registration ")
         email = email.toLowerCase();
 
         // console.log("register user");
@@ -82,6 +83,7 @@ const registerUser = asynchHandler(async (req, res) => {
         }
         // console.log(wallet);
         // console.log(user);
+         console.log("user created")
         return res.status(200).json(new ApiResponse(201, { user }, "User registered successfully"));
 
     } catch (error) {
