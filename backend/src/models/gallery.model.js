@@ -10,11 +10,8 @@ const gallerySchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        date: {
-            type: Date,
-            default: Date.now,
-        },
         category: {
+            enum: ["Events", "Trips", "Ocassions"],
             type: String,
             required: true,
         }

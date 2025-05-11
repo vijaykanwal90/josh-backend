@@ -10,7 +10,7 @@ const checkRole = (roles) => {
             // console.log(req.user)
             if (!req.user || !roles.includes(req.user.role)) {
                 throw new ApiError(403, "You are not authorized to access this route");
-            }
+       P     }
 
             // If the role is valid, proceed to the next middleware/route
             next();
