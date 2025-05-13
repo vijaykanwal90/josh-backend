@@ -179,5 +179,18 @@ const checkUserExist = asynchHandler(async (req, res) => {
     }
 }
 );
+const deleteUser = asynchHandler (async (req,res)=>{
+    try {
+        const { userId } = req.params;
+        const user = await User.findByIdAndDelete(userId);
+        if (!user) {
+            return res.status(404).json(new ApiResponse(404, null, "User not found"));
+        }
+        return res.status(200).json(new ApiResponse(200, null, "User deleted successfully"));
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(new ApiResponse(500, null, error.message));
+    }
+})
 
-export { registerUser, loginUser, logoutUser, checkUserExist };
+export { registerUser, loginUser, logoutUser, checkUserExist , deleteUser};
