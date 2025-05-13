@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js"
 import bcrypt from 'bcryptjs';
 import { Wallet } from "../models/Wallet.model.js";
+import sendMail from "../utils/sendMail.js";
 // import { JsonWebToken } from "jsonwebtoken";
 
 const registerUser = asynchHandler(async (req, res) => {
@@ -83,7 +84,16 @@ const registerUser = asynchHandler(async (req, res) => {
         }
         // console.log(wallet);
         // console.log(user);
-         console.log("user created")
+       if(user){
+        await sendMail({
+            from: process.env.MAIL,
+            to: email,
+            subject: "Welcome to JoshGuru!",
+            text: `Hi ${name},\n\n
+            Welcome to JoshGuru! We're thrilled to have you on board.\n\n`
+          })   
+       }
+
         return res.status(200).json(new ApiResponse(201, { user }, "User registered successfully"));
 
     } catch (error) {
