@@ -226,8 +226,16 @@ const updateMentor = asynchHandler(async (req, res) => {
       }
   
       // ✅ Handle image upload
+
       if (req.file) {
-        mentorData.profileImage = req.file.path; // or whatever field you're using
+        // const file = req.files?.[0];
+        // if (!file) {
+        //   throw new ApiError(400, "File upload failed");
+        // }
+        // console.log("req file")
+        // console.log(req.file)
+        // console.log("mentor image", file);
+        mentorData.profileImage =`/fileStore/${req.file.filename}`; // or whatever field you're using
       }
   
       const mentor = await Mentor.findByIdAndUpdate(id, mentorData, {
