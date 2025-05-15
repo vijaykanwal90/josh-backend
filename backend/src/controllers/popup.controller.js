@@ -68,7 +68,22 @@ const deletePopup = asynchHandler(async (req, res) => {
     }
 });
 
+const deletePopUpById = asynchHandler(async (req, res) => {
+    const { id } = req.params;
+    try {
+        const popup = await Popup.findByIdAndDelete(id);
+        if (!popup) {
+            throw new ApiError(404, "Popup not found");
+        }
+        return res.status(200).json(new ApiResponse(200, { popup }, "Popup deleted successfully"));
+    } catch (error) {
+        console.log(error);
+        throw new ApiError(500, "Internal server error");
+    }
+}
+);
 
 
 
-export { getPopup, createPopup, deletePopup };
+
+export { getPopup, createPopup, deletePopup,deletePopUpById };
