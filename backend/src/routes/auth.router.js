@@ -8,7 +8,7 @@ const router = Router();
 
 router.route('/register').post(registerUser);
 router.route('/login').post(loginUser);
-router.route('/logout').post(userAuth,logoutUser);
+router.route('/logout').post(logoutUser);
 router.route('/checkuserexist').post(checkUserExist);
 router.route('/deleteUser/:userId').delete(userAuth, checkRole(['admin']),deleteUser);
 
