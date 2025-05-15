@@ -1,19 +1,43 @@
-// import express from "express";
 import { Router } from "express";
 import {
-    addTestimonial,
-    getTestimonials,
-    getTestimonialById,
-    deleteTestimonial,
-    updateTestimonial
+  createTestimonial,
+  deleteTestimonial,
+  getAllTestimonials,
+  getTestimonialById,
+  updateTestimonial
 } from "../controllers/testimonial.controller.js";
+import { upload } from "../middlewares/multer.middleware.js";
+import { userAuth } from "../middlewares/auth.middleware.js";
+import { checkRole } from "../middlewares/role.middleware.js";
 
 const router = Router();
 
-router.post("/", addTestimonial);
-router.get("/", getTestimonials);
-router.get("/:id", getTestimonialById);
-router.delete("/:id", deleteTestimonial);
-router.patch("/:id", updateTestimonial);
+router
+  .route("/")
+  .get(getAllTestimonials)
+  
+  router.route("/").post(
+    userAuth,
+    checkRole(["admin"]),
+    upload.fields([
+      { name: "thumbnail", maxCount: 1 },
+      { name: "representativeImage", maxCount: 1 }
+    ]),
+    createTestimonial
+  );
+
+router
+  .route("/:id")
+  .get(getTestimonialById)
+  router.route("/:id").patch(
+    userAuth,
+    checkRole(["admin"]),
+    upload.fields([
+      { name: "thumbnail", maxCount: 1 },
+      { name: "representativeImage", maxCount: 1 }
+    ]),
+    updateTestimonial
+  )
+  router.route("/:id").delete(userAuth, checkRole(["admin"]), deleteTestimonial);
 
 export default router;
