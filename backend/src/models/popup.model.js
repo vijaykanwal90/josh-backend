@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const popupSchema = new mongoose.Schema({
     text:{
         type: String,
-        required: true
+        // required: true
     },
     bundle:{
         type: mongoose.Schema.Types.ObjectId,
