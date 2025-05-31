@@ -84,15 +84,19 @@ const registerUser = asynchHandler(async (req, res) => {
         }
         // console.log(wallet);
         // console.log(user);
-       if(user){
-        await sendMail({
-            from: process.env.MAIL,
-            to: email,
-            subject: "Welcome to JoshGuru!",
-            text: `Hi ${name},\n\n
-            Welcome to JoshGuru! We're thrilled to have you on board.\n\n`
-          })   
-       }
+        // if(user){
+        //     const mail = await sendMail({
+        //         from: process.env.MAIL,
+        //         to: email,
+        //         subject: "Welcome to JoshGuru!",
+        //         text: `Hi ${name},\n\n
+        //         Welcome to JoshGuru! We're thrilled to have you on board.\n\n`
+        //       })   
+        //     if (mail) {
+        //         throw new ApiError(500, "Unable to send welcome email");
+        //     }
+        //    }
+    
 
         return res.status(200).json(new ApiResponse(201, { user }, "User registered successfully"));
 
