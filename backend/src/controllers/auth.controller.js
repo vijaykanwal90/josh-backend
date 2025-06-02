@@ -112,7 +112,7 @@ const registerUser = asynchHandler(async (req, res) => {
 
                 Get Started Now:
                 🔹 Browse Courses: https://joshguru.com/courses
-                🔹 Complete Your Profile: https://joshguru.com/profile
+                🔹 Complete Your Profile: https://joshguru.com//dashboard
 
                 Need help? Check out our FAQs or contact our support team at support@joshguru.com.
 
