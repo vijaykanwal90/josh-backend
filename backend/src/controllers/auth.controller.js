@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js"
 import bcrypt from 'bcryptjs';
 import { Wallet } from "../models/Wallet.model.js";
 import sendMail from "../utils/sendMail.js";
+import crypto from 'crypto';
 // import { JsonWebToken } from "jsonwebtoken";
 
 const registerUser = asynchHandler(async (req, res) => {
@@ -84,6 +85,50 @@ const registerUser = asynchHandler(async (req, res) => {
         }
         // console.log(wallet);
         // console.log(user);
+
+        if (user) {
+            const signupDate = new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            await sendMail({
+            from: process.env.MAIL,
+            to: email,
+            subject: "Welcome to JoshGuru – Start Your Learning Journey!",
+            text: `Hi ${name},
+            Thank you for signing up on JoshGuru.com! We’re excited to have you join our community of learners.
+
+            Your Signup Details:
+            Email: ${email}
+            Account Type: Free
+            Signup Date: ${signupDate}
+
+            Now that you’re registered, you can:
+            ✔ Explore hundreds of courses on coding, business, design, and more.
+            ✔ Track your progress with personalized dashboards
+            ✔ Earn certificates upon course completion
+            
+            Get Started Now:
+            🔹 Browse Courses: https://joshguru.com/courses
+            🔹 Complete Your Profile: https://joshguru.com/dashboard
+
+            Need help? Check out our FAQs or contact our support team at support@joshguru.com.
+
+            Happy Learning!
+
+            Best Regards,  
+            Team JoshGuru  
+            JoshGuru.com
+
+            Follow us on:  
+            Facebook: https://www.facebook.com/JoshGurukul?rdid=lv8OwIlSc66NsvPR&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1AmhJ2wYRN%2F#  
+            Twitter: https://x.com/JoshguruOffice?t=CjZFVCpl7yCGwUfoiFevjA&s=09  
+            Instagram: https://www.instagram.com/joshguru.in/?igsh=MXo5aWFkN3dmd3Yw#`                
+            });
+        }
+
         // if(user){
         //     const mail = await sendMail({
         //         from: process.env.MAIL,
@@ -97,6 +142,7 @@ const registerUser = asynchHandler(async (req, res) => {
         //     }
         //    }
     
+
 
         return res.status(200).json(new ApiResponse(201, { user }, "User registered successfully"));
 
@@ -197,4 +243,155 @@ const deleteUser = asynchHandler (async (req,res)=>{
     }
 })
 
-export { registerUser, loginUser, logoutUser, checkUserExist , deleteUser};
+// Forgot Password - Generate reset token and send email
+const forgotPassword = asynchHandler(async (req, res) => {
+    const { email } = req.body;
+    
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
+    if (!user) {
+        // For security, don't reveal if email doesn't exist
+        return res.status(200).json(
+            new ApiResponse(200, {}, "If your email is registered, you'll receive a password reset link shortly.")
+        );
+    }
+
+    // Generate reset token and set expiration (1 hour)
+    const resetToken = crypto.randomBytes(20).toString('hex');
+    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.resetPasswordExpire = Date.now() + 3600000; // 1 hour
+    await user.save({ validateBeforeSave: false });
+
+    // Create reset URL
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+
+    try {
+        // Send password reset email
+        await sendMail({
+            from: process.env.MAIL,
+            to: user.email,
+            subject: "Reset Your JoshGuru Password",
+            text: `Hi ${user.name},
+
+            We received a request to reset your password for your JoshGuru account. 
+            To proceed, click the link below:
+
+            🔹 Reset Password: ${resetUrl}
+            (Link expires in 1 hour)
+
+            Can't click the button? Copy and paste this link into your browser:
+            ${resetUrl}
+
+            Didn't request this? Ignore this email—your account is still secure.
+
+            For help, contact our support team at ${process.env.SUPPORT_EMAIL}.
+
+            Stay safe,
+            The JoshGuru Team
+            ${process.env.CLIENT_URL}`
+        });
+
+        return res.status(200).json(
+            new ApiResponse(200, {}, "Password reset email sent successfully")
+        );
+    } catch (error) {
+        // Reset token if email fails
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
+        await user.save({ validateBeforeSave: false });
+
+        throw new ApiError(500, "Email could not be sent");
+    }
+});
+
+// Reset Password - Process password reset
+const resetPassword = asynchHandler(async (req, res) => {
+    const { token, password } = req.body;
+    
+    if (!token) {
+        throw new ApiError(400, "Password reset token is required");
+    }
+
+    // Hash token to match database
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    
+    // Find user by token and check expiration
+    const user = await User.findOne({
+        resetPasswordToken: hashedToken,
+        resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+        throw new ApiError(400, "Invalid or expired token");
+    }
+
+    // Update password and clear reset fields
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    // Notify user about password change
+    await sendMail({
+        from: process.env.MAIL,
+        to: user.email,
+        subject: "Your JoshGuru Password Has Been Changed",
+        text: `Hi ${user.name},
+
+        This is a confirmation that the password for your JoshGuru account (${user.email}) 
+        was recently changed.
+
+        If you made this change, no further action is needed.
+
+        If you didn't change your password, please contact our support team immediately at ${process.env.SUPPORT_EMAIL}.
+
+        Stay safe,
+        The JoshGuru Team
+        ${process.env.CLIENT_URL}`
+    });
+
+    return res.status(200).json(
+        new ApiResponse(200, {}, "Password has been reset successfully")
+    );
+});
+
+// Change Password (for logged-in users)
+const changePassword = asynchHandler(async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    const user = await User.findById(req.user._id).select("+password");
+
+    // Verify old password
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordValid) {
+        throw new ApiError(401, "Current password is incorrect");
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    // Send password change notification
+    await sendMail({
+        from: process.env.MAIL,
+        to: user.email,
+        subject: "Your JoshGuru Password Was Changed",
+        text: `Hi ${user.name},
+
+        This is a confirmation that your JoshGuru password was recently changed.
+
+        If you made this change, no further action is needed.
+
+        If you didn't change your password, please contact our support team immediately at ${process.env.SUPPORT_EMAIL}.
+
+        Stay safe,
+        The JoshGuru Team
+        ${process.env.CLIENT_URL}`
+    });
+
+    return res.status(200).json(
+        new ApiResponse(200, {}, "Password changed successfully")
+    );
+});
+
+export { registerUser, loginUser, logoutUser, checkUserExist , deleteUser, forgotPassword, resetPassword, changePassword };
