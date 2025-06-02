@@ -94,43 +94,41 @@ const registerUser = asynchHandler(async (req, res) => {
             });
 
             await sendMail({
-                from: process.env.MAIL,
-                to: email,
-                subject: "Welcome to JoshGuru – Start Your Learning Journey!",
-                text: `Hi ${name},
+            from: process.env.MAIL,
+            to: email,
+            subject: "Welcome to JoshGuru – Start Your Learning Journey!",
+            text: `Hi ${name},
+            Thank you for signing up on JoshGuru.com! We’re excited to have you join our community of learners.
 
-                Thank you for signing up on JoshGuru.com! We’re excited to have you join our community of learners.
+            Your Signup Details:
+            Email: ${email}
+            Account Type: Free
+            Signup Date: ${signupDate}
 
-                Your Signup Details:
-                Email: ${email}
-                Account Type: Free
-                Signup Date: ${signupDate}
+            Now that you’re registered, you can:
+            ✔ Explore hundreds of courses on coding, business, design, and more.
+            ✔ Track your progress with personalized dashboards
+            ✔ Earn certificates upon course completion
+            
+            Get Started Now:
+            🔹 Browse Courses: https://joshguru.com/courses
+            🔹 Complete Your Profile: https://joshguru.com/dashboard
 
-                Now that you’re registered, you can:
-                ✔ Explore hundreds of courses on coding, business, design, and more.
-                ✔ Track your progress with personalized dashboards
-                ✔ Earn certificates upon course completion
+            Need help? Check out our FAQs or contact our support team at support@joshguru.com.
 
-                Get Started Now:
-                🔹 Browse Courses: https://joshguru.com/courses
-                🔹 Complete Your Profile: https://joshguru.com//dashboard
+            Happy Learning!
 
-                Need help? Check out our FAQs or contact our support team at support@joshguru.com.
+            Best Regards,  
+            Team JoshGuru  
+            JoshGuru.com
 
-                Happy Learning!
-
-                Best Regards,
-                Team JoshGuru
-                JoshGuru.com
-
-                Follow us on:
-                Facebook: https://www.facebook.com/JoshGurukul?rdid=lv8OwIlSc66NsvPR&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1AmhJ2wYRN%2F#
-                Twitter: https://x.com/JoshguruOffice?t=CjZFVCpl7yCGwUfoiFevjA&s=09
-                Instagram: https://www.instagram.com/joshguru.in/?igsh=MXo5aWFkN3dmd3Yw#`
-                
+            Follow us on:  
+            Facebook: https://www.facebook.com/JoshGurukul?rdid=lv8OwIlSc66NsvPR&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1AmhJ2wYRN%2F#  
+            Twitter: https://x.com/JoshguruOffice?t=CjZFVCpl7yCGwUfoiFevjA&s=09  
+            Instagram: https://www.instagram.com/joshguru.in/?igsh=MXo5aWFkN3dmd3Yw#`                
             });
         }
-      
+
         // if(user){
         //     const mail = await sendMail({
         //         from: process.env.MAIL,
