@@ -98,50 +98,37 @@ const registerUser = asynchHandler(async (req, res) => {
             to: email,
             subject: "Welcome to JoshGuru – Start Your Learning Journey!",
             text: `Hi ${name},
-            Thank you for signing up on JoshGuru.com! We’re excited to have you join our community of learners.
+Thank you for signing up on JoshGuru.com! We’re excited to have you join our community of learners.
 
-            Your Signup Details:
-            Email: ${email}
-            Account Type: Free
-            Signup Date: ${signupDate}
+Your Signup Details:
+Email: ${email}
+Account Type: Free
+Signup Date: ${signupDate}
 
-            Now that you’re registered, you can:
-            ✔ Explore hundreds of courses on coding, business, design, and more.
-            ✔ Track your progress with personalized dashboards
-            ✔ Earn certificates upon course completion
+Now that you’re registered, you can:
+✔ Explore hundreds of courses on coding, business, design, and more.
+ ✔ Track your progress with personalized dashboards
+✔ Earn certificates upon course completion
             
-            Get Started Now:
-            🔹 Browse Courses: https://joshguru.com/courses
-            🔹 Complete Your Profile: https://joshguru.com/dashboard
+Get Started Now:
+🔹 Browse Courses: https://joshguru.com/courses
+🔹 Complete Your Profile: https://joshguru.com/dashboard
 
-            Need help? Check out our FAQs or contact our support team at support@joshguru.com.
+Need help? Check out our FAQs or contact our support team at support@joshguru.com.
 
-            Happy Learning!
+Happy Learning!
 
-            Best Regards,  
-            Team JoshGuru  
-            JoshGuru.com
+Best Regards,  
+Team JoshGuru  
+JoshGuru.com
 
-            Follow us on:  
-            Facebook: https://www.facebook.com/JoshGurukul?rdid=lv8OwIlSc66NsvPR&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1AmhJ2wYRN%2F#  
-            Twitter: https://x.com/JoshguruOffice?t=CjZFVCpl7yCGwUfoiFevjA&s=09  
-            Instagram: https://www.instagram.com/joshguru.in/?igsh=MXo5aWFkN3dmd3Yw#`                
-            });
+Follow us on:  
+Facebook: https://www.facebook.com/JoshGurukul?rdid=lv8OwIlSc66NsvPR&share_url=https%3A%2F%2Fwww.facebookcom%2Fshare%2F1AmhJ2wYRN%2F#  
+Twitter: https://x.com/JoshguruOffice?t=CjZFVCpl7yCGwUfoiFevjA&s=09  
+Instagram: https://www.instagram.com/joshguru.in/?igsh=MXo5aWFkN3dmd3Yw#`                
+ });
         }
 
-        // if(user){
-        //     const mail = await sendMail({
-        //         from: process.env.MAIL,
-        //         to: email,
-        //         subject: "Welcome to JoshGuru!",
-        //         text: `Hi ${name},\n\n
-        //         Welcome to JoshGuru! We're thrilled to have you on board.\n\n`
-        //       })   
-        //     if (mail) {
-        //         throw new ApiError(500, "Unable to send welcome email");
-        //     }
-        //    }
-    
 
 
         return res.status(200).json(new ApiResponse(201, { user }, "User registered successfully"));
@@ -220,7 +207,7 @@ const checkUserExist = asynchHandler(async (req, res) => {
         throw new ApiError(400, "Email already exists");
         }   
         if (!user) {
-          return  res.status(200).json(new ApiResponse(200, null, "User not found")); 
+          return  res.status(200).json(new ApiResponse(400, null, "User not found")); 
         }
        
     } catch (error) {
@@ -254,6 +241,7 @@ const forgotPassword = asynchHandler(async (req, res) => {
         // For security, don't reveal if email doesn't exist
         return res.status(200).json(
             new ApiResponse(200, {}, "If your email is registered, you'll receive a password reset link shortly.")
+
         );
     }
 
@@ -264,7 +252,7 @@ const forgotPassword = asynchHandler(async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     // Create reset URL
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
     try {
         // Send password reset email
@@ -273,23 +261,20 @@ const forgotPassword = asynchHandler(async (req, res) => {
             to: user.email,
             subject: "Reset Your JoshGuru Password",
             text: `Hi ${user.name},
+We received a request to reset your password for your JoshGuru account. 
+To proceed, click the link below:
+Reset Password: ${resetUrl}
+(Link expires in 1 hour)
 
-            We received a request to reset your password for your JoshGuru account. 
-            To proceed, click the link below:
+Can't click the button? 
+Copy paste this link into your browser: ${resetUrl}
 
-            🔹 Reset Password: ${resetUrl}
-            (Link expires in 1 hour)
+Didn't request this? Ignore this email—your account is still secure.
 
-            Can't click the button? Copy and paste this link into your browser:
-            ${resetUrl}
+For help, contact our support team at ${process.env.SUPPORT_EMAIL}.
 
-            Didn't request this? Ignore this email—your account is still secure.
-
-            For help, contact our support team at ${process.env.SUPPORT_EMAIL}.
-
-            Stay safe,
-            The JoshGuru Team
-            ${process.env.CLIENT_URL}`
+Stay safe,\nThe JoshGuru Team
+${process.env.CLIENT_URL}`
         });
 
         return res.status(200).json(
@@ -327,28 +312,28 @@ const resetPassword = asynchHandler(async (req, res) => {
     }
 
     // Update password and clear reset fields
-    user.password = password;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();
-
+    console.log(hashedPassword)
+    console.log("new user with password"+user.password)
     // Notify user about password change
     await sendMail({
         from: process.env.MAIL,
         to: user.email,
         subject: "Your JoshGuru Password Has Been Changed",
         text: `Hi ${user.name},
+This is a confirmation that the password for your JoshGuru account (${user.email}) 
+was recently changed.
+If you made this change, no further action is needed.
 
-        This is a confirmation that the password for your JoshGuru account (${user.email}) 
-        was recently changed.
+If you didn't change your password, please contact our support team immediately at ${process.env.SUPPORT_EMAIL}.
 
-        If you made this change, no further action is needed.
-
-        If you didn't change your password, please contact our support team immediately at ${process.env.SUPPORT_EMAIL}.
-
-        Stay safe,
-        The JoshGuru Team
-        ${process.env.CLIENT_URL}`
+Stay safe,
+The JoshGuru Team
+${process.env.CLIENT_URL}`
     });
 
     return res.status(200).json(
@@ -377,16 +362,15 @@ const changePassword = asynchHandler(async (req, res) => {
         to: user.email,
         subject: "Your JoshGuru Password Was Changed",
         text: `Hi ${user.name},
+This is a confirmation that your JoshGuru password was recently changed.
 
-        This is a confirmation that your JoshGuru password was recently changed.
+If you made this change, no further action is needed.
 
-        If you made this change, no further action is needed.
+If you didn't change your password, please contact our support team immediately at ${process.env.SUPPORT_EMAIL}.
 
-        If you didn't change your password, please contact our support team immediately at ${process.env.SUPPORT_EMAIL}.
-
-        Stay safe,
-        The JoshGuru Team
-        ${process.env.CLIENT_URL}`
+Stay safe,
+The JoshGuru Team
+${process.env.CLIENT_URL}`
     });
 
     return res.status(200).json(
