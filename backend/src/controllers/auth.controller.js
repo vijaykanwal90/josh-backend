@@ -9,7 +9,7 @@ import crypto from 'crypto';
 // import { JsonWebToken } from "jsonwebtoken";
 
 const registerUser = asynchHandler(async (req, res) => {
-    let { name, email, password, referralCode, mobilenumber } = req.body;
+    let { name, email, password, referralCode, mobilenumber ,adminGeneratedPassword} = req.body;
     try {
         // const validateUser = validateUserInput({ name, email, password, refrralcode, mobilenumber });
         // if(!validateUser){
@@ -26,7 +26,9 @@ const registerUser = asynchHandler(async (req, res) => {
         const exists = await User.findOne({
             $or: [{ email }, { mobilenumber }]
         });
+
         if (exists) {
+            console.log("exists")
             if (exists.mobilenumber == mobilenumber) {
                 throw new ApiError(400, "Mobile number already exists");
             }
@@ -51,6 +53,10 @@ const registerUser = asynchHandler(async (req, res) => {
         const randomPart = Math.floor(1000 + Math.random() * 9000);
     
         const sharableReferralCode = `${namePart}${mobilePart}${randomPart.toString().substring(0, 1)}`;
+        let assignedPassword='';
+        if(adminGeneratedPassword){
+            assignedPassword=adminGeneratedPassword
+        }
         const user = new User({
             name,
             email,
@@ -58,6 +64,7 @@ const registerUser = asynchHandler(async (req, res) => {
             sharableReferralCode,
             mobilenumber,
             referredByCode: referralCode,
+            adminGeneratedPassword:assignedPassword
         });
         // console.log(user)
         await user.save();
@@ -180,11 +187,50 @@ const logoutUser = (req, res) => {
         throw new ApiError(500, "Internal server error");
     }
 }
+const adminPasswordChange = asynchHandler(async (req, res) => {
+    try {
+        const { email } = req.user;
+        const { oldPassword, newPassword } = req.body;
 
+        const userExist = await User.findOne({ email }).select("+password"); // ✅ Correct method
+
+        if (!userExist) {
+            throw new ApiError(404, "User does not exist");
+        }
+
+        const isPasswordMatched = await bcrypt.compare(oldPassword, userExist.password); // ✅ Correct comparison
+
+        if (!isPasswordMatched) {
+            throw new ApiError(400, "Password does not match");
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        userExist.password = hashedPassword;
+
+        await userExist.save(); // ✅ Save updated user
+
+        return res.status(200).json({
+            success: true,
+            message: "Password changed successfully",
+        });
+    } catch (error) {
+        throw new ApiError(500, `Internal Server Error: ${error.message}`);
+    }
+});
+
+
+
+const assignAdmin = asynchHandler(async(req,res)=>{
+
+})
+const removeAdmin = asynchHandler(async(req,res)=>{
+
+})
 const checkUserExist = asynchHandler(async (req, res) => {
     console.log(req.body)
     let { mobilenumber,email } = req.body;
     console.log(mobilenumber)
+    console.log("this is to check")
     console.log(email);
     try {
         let user = await User.findOne(
@@ -203,13 +249,14 @@ const checkUserExist = asynchHandler(async (req, res) => {
                 }
             )
         }
+        console.log(user)
         if(user){
         throw new ApiError(400, "Email already exists");
         }   
-        if (!user) {
-          return  res.status(200).json(new ApiResponse(400, null, "User not found")); 
-        }
-       
+        // if (!user) {
+        //   return  res.status(200).json(new ApiResponse(400, null, "User not found")); 
+        // }
+       console.log("not exist")
     } catch (error) {
         console.log(error);
         return res.status(500).json(new ApiResponse(500, null, error.message));
@@ -378,4 +425,4 @@ ${process.env.CLIENT_URL}`
     );
 });
 
-export { registerUser, loginUser, logoutUser, checkUserExist , deleteUser, forgotPassword, resetPassword, changePassword };
+export { registerUser, loginUser, logoutUser, checkUserExist , deleteUser, forgotPassword, resetPassword, changePassword,adminPasswordChange,assignAdmin,removeAdmin };
