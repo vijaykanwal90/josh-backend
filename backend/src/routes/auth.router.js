@@ -12,7 +12,7 @@ const router = Router();
 router.route('/register').post(registerUser);
 router.route('/login').post(loginUser);
 router.route('/logout').post(logoutUser);
-// router.route('/checkuserexist').post(checkUserExist);
+router.route('/checkuserexist').post(checkUserExist);
 router.route('/resetPassword').post(resetPassword);
 router.route('/changePassword').post(userAuth, changePassword);
 router.route('/forgotPassword').post(forgotPassword);
