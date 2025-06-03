@@ -11,6 +11,7 @@ import crypto from 'crypto';
 const registerUser = asynchHandler(async (req, res) => {
     let { name, email, password, referralCode, mobilenumber ,adminGeneratedPassword} = req.body;
     try {
+        console.log("on registreation")
         // const validateUser = validateUserInput({ name, email, password, refrralcode, mobilenumber });
         // if(!validateUser){
         //     throw new ApiError(400, "Invalid input");
@@ -145,6 +146,94 @@ Instagram: https://www.instagram.com/joshguru.in/?igsh=MXo5aWFkN3dmd3Yw#`
         throw new ApiError(500, "Internal server error");
     }
 });
+const adminUserRegister = asynchHandler(async (req, res) => {
+    console.log("In admin user register");
+
+    let { name, email, password, referralCode, mobilenumber, adminGeneratedPassword } = req.body;
+
+    try {
+        if (!name || !email || !password || !mobilenumber) {
+            throw new ApiError(400, "All required fields must be provided");
+        }
+
+        email = email.toLowerCase();
+
+        // Check if user already exists
+        const existingUser = await User.findOne({
+            $or: [{ email }, { mobilenumber }]
+        });
+
+        if (existingUser) {
+            if (existingUser.mobilenumber === mobilenumber) {
+                throw new ApiError(400, "Mobile number already exists");
+            }
+            if (existingUser.email === email) {
+                throw new ApiError(400, "Email already exists");
+            }
+        }
+
+        // Validate referral code if provided
+        let referredByUser = null;
+        if (referralCode) {
+            referredByUser = await User.findOne({ sharableReferralCode: referralCode });
+            if (!referredByUser) {
+                throw new ApiError(400, "Invalid referral code");
+            }
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Generate unique referral code
+        const namePart = name.split(" ")[0].toUpperCase();
+        const mobilePart = mobilenumber.slice(-4);
+        const randomPart = Math.floor(1000 + Math.random() * 9000);
+        const sharableReferralCode = `${namePart}${mobilePart}${randomPart.toString().substring(0, 1)}`;
+
+        const assignedPassword = adminGeneratedPassword || '';
+
+        // Create user
+        const user = new User({
+            name,
+            email,
+            password: hashedPassword,
+            sharableReferralCode,
+            mobilenumber,
+            referredByCode: referralCode || null,
+            adminGeneratedPassword: assignedPassword
+        });
+
+        await user.save();
+        console.log(user)
+        // Create wallet
+        const wallet = await new Wallet({
+            user: user._id
+        }).save();
+
+        if (!wallet) {
+            throw new ApiError(500, "Unable to create wallet");
+        }
+
+        // Reward referrer
+        if (referredByUser) {
+            const refWallet = await Wallet.findOne({ user: referredByUser._id });
+
+            if (refWallet) {
+                refWallet.balance += 1000;
+                refWallet.referedUsers.push(user._id);
+                await refWallet.save();
+            } else {
+                throw new ApiError(500, "Referrer wallet not found");
+            }
+        }
+        
+        return res.status(201).json(new ApiResponse(201, { user }, "User registered successfully"));
+
+    } catch (error) {
+        console.error(error);
+        throw new ApiError(500, "Internal server error");
+    }
+});
+
 const loginUser = asynchHandler(async (req, res) => {
     let { email, password } = req.body;
     try {
@@ -227,6 +316,7 @@ const removeAdmin = asynchHandler(async(req,res)=>{
 
 })
 const checkUserExist = asynchHandler(async (req, res) => {
+    console.log("check user exist")
     console.log(req.body)
     let { mobilenumber,email } = req.body;
     console.log(mobilenumber)
@@ -425,4 +515,4 @@ ${process.env.CLIENT_URL}`
     );
 });
 
-export { registerUser, loginUser, logoutUser, checkUserExist , deleteUser, forgotPassword, resetPassword, changePassword,adminPasswordChange,assignAdmin,removeAdmin };
+export { registerUser, loginUser, logoutUser, checkUserExist , deleteUser, forgotPassword, resetPassword, changePassword,adminPasswordChange,assignAdmin,removeAdmin, adminUserRegister };

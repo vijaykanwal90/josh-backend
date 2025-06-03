@@ -9,7 +9,7 @@ const userAuth = asynchHandler(async (req, res, next) => {
      try{
         const { token }=  req.cookies;
        
-       
+        console.log(token)
         if(!token){
             throw new ApiError(401, "you are Unauthorized");
         }
