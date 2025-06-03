@@ -253,9 +253,9 @@ const checkUserExist = asynchHandler(async (req, res) => {
         if(user){
         throw new ApiError(400, "Email already exists");
         }   
-        // if (!user) {
-        //   return  res.status(200).json(new ApiResponse(400, null, "User not found")); 
-        // }
+        if (!user) {
+          return  res.status(200).json(new ApiResponse(400, null, "User not found")); 
+        }
        console.log("not exist")
     } catch (error) {
         console.log(error);
