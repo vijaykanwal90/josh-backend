@@ -3,7 +3,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Testimonial } from "../models/testimonial.model.js";
 import path from "path";
-
+import { uploadCloudinary } from "../utils/Cloudinary.js";
+ 
 // Helper to embed YouTube URL
 function convertToEmbedUrl(url) {
   try {
@@ -19,6 +20,8 @@ function convertToEmbedUrl(url) {
 // @desc    Create a testimonial
 // @route   POST /api/testimonials
 // @access  Admin
+// import { uploadCloudinary } from "../utils/cloudinary.utils.js"; // Make sure this is properly imported
+
 export const createTestimonial = asynchHandler(async (req, res) => {
   const {
     name,
@@ -30,10 +33,10 @@ export const createTestimonial = asynchHandler(async (req, res) => {
     quote,
     rating,
     representative,
-    video, // This is the video URL
+    video, // Video URL
   } = req.body;
 
-  // Validate required fields
+  // Validation
   if (
     !name ||
     !location ||
@@ -49,16 +52,32 @@ export const createTestimonial = asynchHandler(async (req, res) => {
   }
 
   const files = req.files || {};
-  const thumbnailFile = files["thumbnail"]?.[0];
-  const representativeFile = files["representativeImage"]?.[0];
+  let thumbnail = undefined;
+  let representativeImage = undefined;
 
-  // Store as relative path for serving later
-  const thumbnail = thumbnailFile ? `/filestore/${thumbnailFile.filename}` : undefined;
-  const representativeImage = representativeFile ? `/filestore/${representativeFile.filename}` : undefined;
+  // Handle image uploads using Cloudinary
+  const fileTypes = ["thumbnail", "representativeImage"];
+  for (const fileType of fileTypes) {
+    const file = files[fileType]?.[0];
+    if (file) {
+      try {
+        const result = await uploadCloudinary(file.buffer);
+        if (fileType === "thumbnail") {
+          thumbnail = result?.secure_url;
+        } else if (fileType === "representativeImage") {
+          representativeImage = result?.secure_url;
+        }
+      } catch (err) {
+        console.error(`Cloudinary upload failed for ${fileType}:`, err);
+        throw new ApiError(500, `Failed to upload ${fileType}`);
+      }
+    }
+  }
 
-  // Convert video URL if provided
+  // Convert video URL to embed format
   const embedVideoUrl = video ? convertToEmbedUrl(video) : undefined;
 
+  // Save testimonial
   const testimonial = await Testimonial.create({
     name,
     location,
@@ -74,10 +93,15 @@ export const createTestimonial = asynchHandler(async (req, res) => {
     representativeImage,
   });
 
-  return res
-    .status(201)
-    .json(new ApiResponse(201, { testimonial }, "Testimonial created successfully."));
+  return res.status(201).json(
+    new ApiResponse(
+      201,
+      { testimonial },
+      "Testimonial created successfully."
+    )
+  );
 });
+
 
 // @desc    Get all testimonials
 // @route   GET /api/testimonials
@@ -103,6 +127,8 @@ export const getTestimonialById = asynchHandler(async (req, res) => {
 // @desc    Update testimonial
 // @route   PATCH /api/testimonials/:id
 // @access  Admin
+
+
 export const updateTestimonial = asynchHandler(async (req, res) => {
   const {
     name,
@@ -130,16 +156,27 @@ export const updateTestimonial = asynchHandler(async (req, res) => {
   };
 
   const files = req.files || {};
-  const thumbnailFile = files["thumbnail"]?.[0];
-  const representativeFile = files["representativeImage"]?.[0];
 
-  if (thumbnailFile) {
-    updatedFields.thumbnail = `/filestore/${thumbnailFile.filename}`;
-  }
-  if (representativeFile) {
-    updatedFields.representativeImage = `/filestore/${representativeFile.filename}`;
+  // Handle Cloudinary uploads
+  const fileTypes = ["thumbnail", "representativeImage"];
+  for (const fileType of fileTypes) {
+    const file = files[fileType]?.[0];
+    if (file) {
+      try {
+        const result = await uploadCloudinary(file.buffer);
+        if (fileType === "thumbnail") {
+          updatedFields.thumbnail = result?.secure_url;
+        } else if (fileType === "representativeImage") {
+          updatedFields.representativeImage = result?.secure_url;
+        }
+      } catch (err) {
+        console.error(`Cloudinary upload failed for ${fileType}:`, err);
+        throw new ApiError(500, `Failed to upload ${fileType}`);
+      }
+    }
   }
 
+  // Convert video URL if provided
   if (video) {
     updatedFields.video = convertToEmbedUrl(video);
   }
@@ -155,6 +192,7 @@ export const updateTestimonial = asynchHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, { testimonial: updated }, "Testimonial updated successfully."));
 });
+
 
 // @desc    Delete testimonial
 // @route   DELETE /api/testimonials/:id

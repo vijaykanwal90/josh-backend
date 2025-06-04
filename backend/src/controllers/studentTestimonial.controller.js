@@ -2,7 +2,7 @@ import { asynchHandler } from "../utils/AsynchHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { StudentTestimonial } from "../models/studentTestimonial.model.js";
-
+import { uploadCloudinary } from "../utils/Cloudinary.js";
 // Helper function: Convert normal YouTube link to embeddable link
 function convertToEmbedUrl(url) {
   try {
@@ -27,8 +27,18 @@ export const createTestimonial = asynchHandler(async (req, res) => {
     }
 
     // Handle image file upload (optional)
-    const imageFile = req.files?.imageFile?.[0];
-    const localImagePath = imageFile ? `/fileStore/${imageFile.filename}` : null;
+  const imageFile= req.file;
+      let cloudinaryImageUrl = null;
+  
+      if (imageFile) {
+        try {
+          const result = await uploadCloudinary(imageFile.buffer);
+          cloudinaryImageUrl = result?.secure_url || null;
+        } catch (err) {
+          console.error("Cloudinary upload failed:", err);
+          throw new ApiError(500, "Failed to upload mentor image");
+        }
+      }
 
     // Process the video URL if provided
     let convertedVideoUrl = "";
@@ -42,7 +52,7 @@ export const createTestimonial = asynchHandler(async (req, res) => {
       name,
       course,
       testimonialText,
-      image: localImagePath,
+      image: cloudinaryImageUrl || "",
       isVideo,
       videoUrl: convertedVideoUrl,
       rating
@@ -101,9 +111,18 @@ export const updateTestimonial = asynchHandler(async (req, res) => {
     const updatedFields = { name, course, testimonialText,rating };
 
     // Handle image file update if a new one is provided
-    const imageFile = req.files?.imageFile?.[0];
+    const imageFile= req.file;
+    let cloudinaryImageUrl = null;
+
     if (imageFile) {
-      updatedFields.image = `/fileStore/${imageFile.filename}`;
+      try {
+        const result = await uploadCloudinary(imageFile.buffer);
+        cloudinaryImageUrl = result?.secure_url || null;
+        updatedFields.image = cloudinaryImageUrl;
+      } catch (err) {
+        console.error("Cloudinary upload failed:", err);
+        throw new ApiError(500, "Failed to upload mentor image");
+      }
     }
 
     // Process the video URL if provided
