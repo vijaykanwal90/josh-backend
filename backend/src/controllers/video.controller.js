@@ -166,8 +166,7 @@ const getAllVideosByCourseId = asynchHandler(async (req, res) => {
     return res
         .status(200)
         .json(new ApiResponse(200, videos, "videos fetched successfully"));
-}
-);
+});
 export { publishVideo, getAllVideos, getVideoById, deleteVideo, updateVideo, getAllVideosByCourseId };
 
 // Some ToDOs: first only the user who's video is can delete and update the video only 
