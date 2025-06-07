@@ -15,6 +15,7 @@ import studentTestimonialRouter from "./routes/studentTestimonial.router.js";
 import privacyRouter from './routes/privacy.router.js';
 import webinar from './routes/webinar.router.js'
 import mentorrouter from './routes/mentor.router.js'
+import digitalbundle from './routes/digitalBundle.router.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path';
@@ -61,6 +62,7 @@ app.use("/api/v1/testimonials", testimonialRouter);
 app.use("/api/v1/studenttestimonials", studentTestimonialRouter);
 app.use('/api/v1/popup',popuprouter);
 app.use('/api/v1/privacy', privacyRouter);
- app.use('/api/v1/gallery', galleryrouter);
+app.use('/api/v1/gallery', galleryrouter);
+app.use('/api/v1/digitalBundle', digitalbundle);
 
 export { app };

@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Define the upload directory path
-const uploadPath = path.join(__dirname, "../../../..", "josh-web/client/public/fileStore");
+const uploadPath = path.join(__dirname, "../../../..", "josh-web/BACKEND/public/temp");
 console.log("multer")
 // Ensure that the directory exists (create it if it doesn't exist)
 if (!fs.existsSync(uploadPath)) {
@@ -42,7 +42,7 @@ const fileFilter = (req, file, cb) => {
 // Create multer instance with storage and file filter
 export const upload = multer({
   storage,
-  fileFilter,
+  // fileFilter,
   limits: { fileSize: 20 * 1024 * 1024 }, // Limit file size to 10MB (optional)
 });
 
