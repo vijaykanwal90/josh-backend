@@ -61,6 +61,30 @@
 import multer from "multer";
 import path from "path";
 
+// Get __filename and __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Define the upload directory path
+const uploadPath = path.join(__dirname, "../../../..", "josh-web/BACKEND/public/temp");
+console.log("multer")
+// Ensure that the directory exists (create it if it doesn't exist)
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true });
+}
+
+// Configure multer storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadPath); // Set the destination directory for uploaded files
+  },
+  filename: function (req, file, cb) {
+    // You can modify the filename here if you need
+    cb(null, Date.now() + "_" + file.originalname); // Prefixing file with timestamp to avoid name collisions
+  },
+});
+
+// File filter function to validate file types (Optional)
 // File filter to validate allowed file types
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /pdf|jpg|jpeg|png/;

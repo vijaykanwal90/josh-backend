@@ -2,7 +2,7 @@ import { Router } from "express";
 // import { createCourse, getCourses, getCourseById, getUserCourses, updateCourse, deleteCourse, } from "../controllers/course.controller.js";
 import { userAuth } from "../middlewares/auth.middleware.js";
 import { checkRole } from "../middlewares/role.middleware.js";
-import {upload,handleMulterError} from "../middlewares/multer.middleware.js";
+import {upload} from "../middlewares/multer.middleware.js";
 // import { getVideo } from "../utils/courseAccess.js";
 import {
   createCourse,
