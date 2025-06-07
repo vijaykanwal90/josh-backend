@@ -9,8 +9,9 @@ import crypto from 'crypto';
 // import { JsonWebToken } from "jsonwebtoken";
 
 const registerUser = asynchHandler(async (req, res) => {
-    let { name, email, password, referralCode, mobilenumber } = req.body;
+    let { name, email, password, referralCode, mobilenumber ,adminGeneratedPassword} = req.body;
     try {
+        console.log("on registreation")
         // const validateUser = validateUserInput({ name, email, password, refrralcode, mobilenumber });
         // if(!validateUser){
         //     throw new ApiError(400, "Invalid input");
@@ -26,7 +27,9 @@ const registerUser = asynchHandler(async (req, res) => {
         const exists = await User.findOne({
             $or: [{ email }, { mobilenumber }]
         });
+
         if (exists) {
+            console.log("exists")
             if (exists.mobilenumber == mobilenumber) {
                 throw new ApiError(400, "Mobile number already exists");
             }
@@ -51,6 +54,10 @@ const registerUser = asynchHandler(async (req, res) => {
         const randomPart = Math.floor(1000 + Math.random() * 9000);
     
         const sharableReferralCode = `${namePart}${mobilePart}${randomPart.toString().substring(0, 1)}`;
+        let assignedPassword='';
+        if(adminGeneratedPassword){
+            assignedPassword=adminGeneratedPassword
+        }
         const user = new User({
             name,
             email,
@@ -58,6 +65,7 @@ const registerUser = asynchHandler(async (req, res) => {
             sharableReferralCode,
             mobilenumber,
             referredByCode: referralCode,
+            adminGeneratedPassword:assignedPassword
         });
         // console.log(user)
         await user.save();
@@ -98,50 +106,37 @@ const registerUser = asynchHandler(async (req, res) => {
             to: email,
             subject: "Welcome to JoshGuru – Start Your Learning Journey!",
             text: `Hi ${name},
-            Thank you for signing up on JoshGuru.com! We’re excited to have you join our community of learners.
+Thank you for signing up on JoshGuru.com! We’re excited to have you join our community of learners.
 
-            Your Signup Details:
-            Email: ${email}
-            Account Type: Free
-            Signup Date: ${signupDate}
+Your Signup Details:
+Email: ${email}
+Account Type: Free
+Signup Date: ${signupDate}
 
-            Now that you’re registered, you can:
-            ✔ Explore hundreds of courses on coding, business, design, and more.
-            ✔ Track your progress with personalized dashboards
-            ✔ Earn certificates upon course completion
+Now that you’re registered, you can:
+✔ Explore hundreds of courses on coding, business, design, and more.
+ ✔ Track your progress with personalized dashboards
+✔ Earn certificates upon course completion
             
-            Get Started Now:
-            🔹 Browse Courses: https://joshguru.com/courses
-            🔹 Complete Your Profile: https://joshguru.com/dashboard
+Get Started Now:
+🔹 Browse Courses: https://joshguru.com/courses
+🔹 Complete Your Profile: https://joshguru.com/dashboard
 
-            Need help? Check out our FAQs or contact our support team at support@joshguru.com.
+Need help? Check out our FAQs or contact our support team at support@joshguru.com.
 
-            Happy Learning!
+Happy Learning!
 
-            Best Regards,  
-            Team JoshGuru  
-            JoshGuru.com
+Best Regards,  
+Team JoshGuru  
+JoshGuru.com
 
-            Follow us on:  
-            Facebook: https://www.facebook.com/JoshGurukul?rdid=lv8OwIlSc66NsvPR&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1AmhJ2wYRN%2F#  
-            Twitter: https://x.com/JoshguruOffice?t=CjZFVCpl7yCGwUfoiFevjA&s=09  
-            Instagram: https://www.instagram.com/joshguru.in/?igsh=MXo5aWFkN3dmd3Yw#`                
-            });
+Follow us on:  
+Facebook: https://www.facebook.com/JoshGurukul?rdid=lv8OwIlSc66NsvPR&share_url=https%3A%2F%2Fwww.facebookcom%2Fshare%2F1AmhJ2wYRN%2F#  
+Twitter: https://x.com/JoshguruOffice?t=CjZFVCpl7yCGwUfoiFevjA&s=09  
+Instagram: https://www.instagram.com/joshguru.in/?igsh=MXo5aWFkN3dmd3Yw#`                
+ });
         }
 
-        // if(user){
-        //     const mail = await sendMail({
-        //         from: process.env.MAIL,
-        //         to: email,
-        //         subject: "Welcome to JoshGuru!",
-        //         text: `Hi ${name},\n\n
-        //         Welcome to JoshGuru! We're thrilled to have you on board.\n\n`
-        //       })   
-        //     if (mail) {
-        //         throw new ApiError(500, "Unable to send welcome email");
-        //     }
-        //    }
-    
 
 
         return res.status(200).json(new ApiResponse(201, { user }, "User registered successfully"));
@@ -151,6 +146,94 @@ const registerUser = asynchHandler(async (req, res) => {
         throw new ApiError(500, "Internal server error");
     }
 });
+const adminUserRegister = asynchHandler(async (req, res) => {
+    console.log("In admin user register");
+
+    let { name, email, password, referralCode, mobilenumber, adminGeneratedPassword } = req.body;
+
+    try {
+        if (!name || !email || !password || !mobilenumber) {
+            throw new ApiError(400, "All required fields must be provided");
+        }
+
+        email = email.toLowerCase();
+
+        // Check if user already exists
+        const existingUser = await User.findOne({
+            $or: [{ email }, { mobilenumber }]
+        });
+
+        if (existingUser) {
+            if (existingUser.mobilenumber === mobilenumber) {
+                throw new ApiError(400, "Mobile number already exists");
+            }
+            if (existingUser.email === email) {
+                throw new ApiError(400, "Email already exists");
+            }
+        }
+
+        // Validate referral code if provided
+        let referredByUser = null;
+        if (referralCode) {
+            referredByUser = await User.findOne({ sharableReferralCode: referralCode });
+            if (!referredByUser) {
+                throw new ApiError(400, "Invalid referral code");
+            }
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Generate unique referral code
+        const namePart = name.split(" ")[0].toUpperCase();
+        const mobilePart = mobilenumber.slice(-4);
+        const randomPart = Math.floor(1000 + Math.random() * 9000);
+        const sharableReferralCode = `${namePart}${mobilePart}${randomPart.toString().substring(0, 1)}`;
+
+        const assignedPassword = adminGeneratedPassword || '';
+
+        // Create user
+        const user = new User({
+            name,
+            email,
+            password: hashedPassword,
+            sharableReferralCode,
+            mobilenumber,
+            referredByCode: referralCode || null,
+            adminGeneratedPassword: assignedPassword
+        });
+
+        await user.save();
+        console.log(user)
+        // Create wallet
+        const wallet = await new Wallet({
+            user: user._id
+        }).save();
+
+        if (!wallet) {
+            throw new ApiError(500, "Unable to create wallet");
+        }
+
+        // Reward referrer
+        if (referredByUser) {
+            const refWallet = await Wallet.findOne({ user: referredByUser._id });
+
+            if (refWallet) {
+                refWallet.balance += 1000;
+                refWallet.referedUsers.push(user._id);
+                await refWallet.save();
+            } else {
+                throw new ApiError(500, "Referrer wallet not found");
+            }
+        }
+        
+        return res.status(201).json(new ApiResponse(201, { user }, "User registered successfully"));
+
+    } catch (error) {
+        console.error(error);
+        throw new ApiError(500, "Internal server error");
+    }
+});
+
 const loginUser = asynchHandler(async (req, res) => {
     let { email, password } = req.body;
     try {
@@ -193,11 +276,51 @@ const logoutUser = (req, res) => {
         throw new ApiError(500, "Internal server error");
     }
 }
+const adminPasswordChange = asynchHandler(async (req, res) => {
+    try {
+        const { email } = req.user;
+        const { oldPassword, newPassword } = req.body;
 
+        const userExist = await User.findOne({ email }).select("+password"); // ✅ Correct method
+
+        if (!userExist) {
+            throw new ApiError(404, "User does not exist");
+        }
+
+        const isPasswordMatched = await bcrypt.compare(oldPassword, userExist.password); // ✅ Correct comparison
+
+        if (!isPasswordMatched) {
+            throw new ApiError(400, "Password does not match");
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        userExist.password = hashedPassword;
+
+        await userExist.save(); // ✅ Save updated user
+
+        return res.status(200).json({
+            success: true,
+            message: "Password changed successfully",
+        });
+    } catch (error) {
+        throw new ApiError(500, `Internal Server Error: ${error.message}`);
+    }
+});
+
+
+
+const assignAdmin = asynchHandler(async(req,res)=>{
+
+})
+const removeAdmin = asynchHandler(async(req,res)=>{
+
+})
 const checkUserExist = asynchHandler(async (req, res) => {
+    console.log("check user exist")
     console.log(req.body)
     let { mobilenumber,email } = req.body;
     console.log(mobilenumber)
+    console.log("this is to check")
     console.log(email);
     try {
         let user = await User.findOne(
@@ -216,13 +339,14 @@ const checkUserExist = asynchHandler(async (req, res) => {
                 }
             )
         }
+        console.log(user)
         if(user){
         throw new ApiError(400, "Email already exists");
         }   
         if (!user) {
-          return  res.status(200).json(new ApiResponse(200, null, "User not found")); 
+          return  res.status(200).json(new ApiResponse(400, null, "User not found")); 
         }
-       
+       console.log("not exist")
     } catch (error) {
         console.log(error);
         return res.status(500).json(new ApiResponse(500, null, error.message));
@@ -254,6 +378,7 @@ const forgotPassword = asynchHandler(async (req, res) => {
         // For security, don't reveal if email doesn't exist
         return res.status(200).json(
             new ApiResponse(200, {}, "If your email is registered, you'll receive a password reset link shortly.")
+
         );
     }
 
@@ -264,7 +389,7 @@ const forgotPassword = asynchHandler(async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     // Create reset URL
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
     try {
         // Send password reset email
@@ -273,23 +398,20 @@ const forgotPassword = asynchHandler(async (req, res) => {
             to: user.email,
             subject: "Reset Your JoshGuru Password",
             text: `Hi ${user.name},
+We received a request to reset your password for your JoshGuru account. 
+To proceed, click the link below:
+Reset Password: ${resetUrl}
+(Link expires in 1 hour)
 
-            We received a request to reset your password for your JoshGuru account. 
-            To proceed, click the link below:
+Can't click the button? 
+Copy paste this link into your browser: ${resetUrl}
 
-            🔹 Reset Password: ${resetUrl}
-            (Link expires in 1 hour)
+Didn't request this? Ignore this email—your account is still secure.
 
-            Can't click the button? Copy and paste this link into your browser:
-            ${resetUrl}
+For help, contact our support team at ${process.env.SUPPORT_EMAIL}.
 
-            Didn't request this? Ignore this email—your account is still secure.
-
-            For help, contact our support team at ${process.env.SUPPORT_EMAIL}.
-
-            Stay safe,
-            The JoshGuru Team
-            ${process.env.CLIENT_URL}`
+Stay safe,\nThe JoshGuru Team
+${process.env.CLIENT_URL}`
         });
 
         return res.status(200).json(
@@ -327,28 +449,28 @@ const resetPassword = asynchHandler(async (req, res) => {
     }
 
     // Update password and clear reset fields
-    user.password = password;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();
-
+    console.log(hashedPassword)
+    console.log("new user with password"+user.password)
     // Notify user about password change
     await sendMail({
         from: process.env.MAIL,
         to: user.email,
         subject: "Your JoshGuru Password Has Been Changed",
         text: `Hi ${user.name},
+This is a confirmation that the password for your JoshGuru account (${user.email}) 
+was recently changed.
+If you made this change, no further action is needed.
 
-        This is a confirmation that the password for your JoshGuru account (${user.email}) 
-        was recently changed.
+If you didn't change your password, please contact our support team immediately at ${process.env.SUPPORT_EMAIL}.
 
-        If you made this change, no further action is needed.
-
-        If you didn't change your password, please contact our support team immediately at ${process.env.SUPPORT_EMAIL}.
-
-        Stay safe,
-        The JoshGuru Team
-        ${process.env.CLIENT_URL}`
+Stay safe,
+The JoshGuru Team
+${process.env.CLIENT_URL}`
     });
 
     return res.status(200).json(
@@ -377,16 +499,15 @@ const changePassword = asynchHandler(async (req, res) => {
         to: user.email,
         subject: "Your JoshGuru Password Was Changed",
         text: `Hi ${user.name},
+This is a confirmation that your JoshGuru password was recently changed.
 
-        This is a confirmation that your JoshGuru password was recently changed.
+If you made this change, no further action is needed.
 
-        If you made this change, no further action is needed.
+If you didn't change your password, please contact our support team immediately at ${process.env.SUPPORT_EMAIL}.
 
-        If you didn't change your password, please contact our support team immediately at ${process.env.SUPPORT_EMAIL}.
-
-        Stay safe,
-        The JoshGuru Team
-        ${process.env.CLIENT_URL}`
+Stay safe,
+The JoshGuru Team
+${process.env.CLIENT_URL}`
     });
 
     return res.status(200).json(
@@ -394,4 +515,4 @@ const changePassword = asynchHandler(async (req, res) => {
     );
 });
 
-export { registerUser, loginUser, logoutUser, checkUserExist , deleteUser, forgotPassword, resetPassword, changePassword };
+export { registerUser, loginUser, logoutUser, checkUserExist , deleteUser, forgotPassword, resetPassword, changePassword,adminPasswordChange,assignAdmin,removeAdmin, adminUserRegister };

@@ -8,147 +8,11 @@ import { Mentor } from "../models/mentor.model.js";
 // import { uploadCloudinary } from "../utils/Cloudinary.js";
 import { Bundle } from "../models/bundle.model.js";
 import mongoose from "mongoose";
-// Create a course and link it to a bundles
-// const createCourse = asynchHandler(async (req, res) => {
-//     const {
-//         title,
-//         image,
-//         bundleName,
-//         category,
-//         video,
-//         description,
-//         price,
-//         duration,
-//         courseMentorName
-//     } = req.body;
+import { uploadCloudinary } from "../utils/Cloudinary.js";
 
-//     try {
-//         // Check if the bundle already exists
-//         let bundle = await Bundle.findOne({ bundleName });
+import fs from "fs";
+// import { uploadCloudinary } from "../utils/cloudinary.utils.js"; // Make sure the import is only once at the top!
 
-//         // If the bundle doesn't exist, create a new bundle
-//         if (!bundle) {
-//             bundle = new Bundle({
-//                 bundleName,
-//                 // You can customize the description and price as needed
-//                 courses: [] // Start with an empty courses array
-//             });
-//             await bundle.save();
-//         }
-
-//         // Create the course and link it to the bundle
-//         const course = new Course({
-//             title,
-//             image,
-//             bundle: bundle._id, // Add bundle ID reference here
-//             category,
-//             video,
-//             description,
-//             price,
-//             duration,
-//             courseMentorName
-//         });
-
-//         // Save the course to the database
-//         await course.save();
-
-//         // Add the course to the bundle's courses array
-//         bundle.courses.push(course._id);
-//         await bundle.save();
-
-//         return res.status(201).json(new ApiResponse(201, { course }, "Course created successfully"));
-//     } catch (error) {
-//         console.error(error);
-//         throw new ApiError(500, "Internal server error", error);
-//     }
-// });
-// const createCourse = asynchHandler(async (req, res) => {
-//   const {
-//     title,
-//     image,
-//     bundleName,
-//     category,
-//     description,
-//     price,
-//     duration,
-//     courseMentorName,
-//     whyCourse,
-//     whatYouWillLearn,
-//     courseHighlights,
-//     whoShouldEnroll,
-//     videos = [],
-//     isTrending,
-//     isOffline,
-//   } = req.body;
-
-//   try {
-//     // Find or create bundle
-//     let bundle = await Bundle.findOne({ bundleName });
-
-//     //   if (!bundle) {
-//     //     bundle = new Bundle({
-//     //       bundleName,
-//     //       courses: []
-//     //     });
-//     //     await bundle.save();
-//     //   }
-
-//     // marking first video as preview true
-//     const formattedVideos = videos.map((video, index) => ({
-//       title: video.title,
-//       url: convertToEmbedUrl(video.url),
-//       isPreview: index === 0 ? true : video.isPreview || false,
-//     }));
-//     const localPdfPath = req.files?.pdfFile
-//       ? req.files.pdfFile[0].path
-//       : null;
-//     const localCertificatePath = req.files?.certificateFile
-//       ? req.files.certificateFile[0].path
-//       : null;
-//     // Create course with videos
-//     const course = new Course({
-//       title,
-//       image,
-//       bundleName,
-//       description,
-//       category,
-//       price,
-//       duration,
-//       bundle: bundle ? bundle._id : null,
-//       courseMentorName,
-//       videos: formattedVideos,
-//       whyCourse,
-//       whatYouWillLearn,
-//       courseHighlights,
-//       whoShouldEnroll,
-//       isTrending: isTrending || false,
-//       isOffline: isOffline || false,
-//       pdfPath:localPdfPath,
-//       certificatePath:localCertificatePath,
-//     });
-
-//     await course.save();
-//     // Add course to bundle
-//     if (bundle) {
-//       bundle.courses.push(course._id);
-
-//       await bundle.save();
-//     }
-//     console.log("course created");
-//     return res
-//       .status(201)
-//       .json(
-//         new ApiResponse(
-//           201,
-//           { course },
-//           "Course created with videos successfully"
-//         )
-//       );
-//   } catch (error) {
-//     console.error(error);
-//     throw new ApiError(500, "Internal server error", error);
-//   }
-// });
 const createCourse = asynchHandler(async (req, res) => {
   try {
     const {
@@ -159,90 +23,130 @@ const createCourse = asynchHandler(async (req, res) => {
       price,
       duration,
       courseMentorName,
-      whyCourse,
-      whatYouWillLearn,
-      courseHighlights,
-      whoShouldEnroll,
       isTrending,
-      isOffline
+      isOffline,
+      courseIntrovideo: rawIntroVideo,
     } = req.body;
-    let { courseIntrovideo } = req.body;
-    // console.log("Creating course...");
 
-    // Parse videos if sent as JSON string
+    // Parse videos array from string or array
     let videos = [];
     if (req.body.videos) {
       try {
-        // console.log("Parsing videos...");
-        const parsed = JSON.parse(req.body.videos);
-        if (Array.isArray(parsed)) {
-          videos = parsed;
+        const parsedVideos =
+          typeof req.body.videos === "string"
+            ? JSON.parse(req.body.videos)
+            : req.body.videos;
+
+        if (Array.isArray(parsedVideos)) {
+          videos = parsedVideos.map((video, index) => ({
+            title: video.title || `Video ${index + 1}`,
+            url: convertToEmbedUrl(video.url),
+            isPreview: index === 0 ? true : video.isPreview || false,
+          }));
         } else {
-          console.warn("Videos field is not an array.");
+          return res
+            .status(400)
+            .json(new ApiResponse(400, null, "Videos must be an array"));
         }
-      } catch (e) {
-        console.warn("Invalid videos format. Proceeding without videos.");
+      } catch {
+        return res
+          .status(400)
+          .json(new ApiResponse(400, null, "Invalid JSON format for videos"));
       }
     }
 
-    // Find or create bundle if bundleName is provided
+    // Find or create bundle if bundleName provided
     let bundle = null;
     if (bundleName) {
       bundle = await Bundle.findOne({ bundleName });
       if (!bundle) {
         bundle = new Bundle({ bundleName });
         await bundle.save();
-        console.log("New bundle created:", bundleName);
       }
     }
 
-    // Format videos and mark first as preview
-    const formattedVideos = videos.map((video, index) => ({
-      title: video.title || `Video ${index + 1}`,
-      url: video.url ? convertToEmbedUrl(video.url) : "",
-      isPreview: index === 0 ? true : video.isPreview || false,
-    }));
+    // Upload files to Cloudinary (imageFile, pdfFile, certificateFile)
+    const fileTypes = ["imageFile", "pdfFile", "certificateFile"];
+    const uploadedFiles = {};
+    for (const fileType of fileTypes) {
+      const file = req.files?.[fileType]?.[0];
+      if (file) {
+        try {
+          const uploadResult = await uploadCloudinary(file.buffer);
+          // Map field names
+          let fieldName =
+            fileType === "imageFile"
+              ? "image"
+              : fileType === "pdfFile"
+              ? "pdfPath"
+              : "certificatePath";
 
-    // Handle file uploads
-    const imageFile = req.files?.imageFile?.[0];
-    const localImagePath = imageFile
-      ? `/fileStore/${imageFile.filename}`
-      : null;
-
-    const pdfFile = req.files?.pdfFile?.[0];
-    const localPdfPath = pdfFile ? `/fileStore/${pdfFile.filename}` : null;
-
-    const certificateFile = req.files?.certificateFile?.[0];
-    const localCertificatePath = certificateFile
-      ? `/fileStore/${certificateFile.filename}`
-      : null;
-      if(courseIntrovideo !==undefined){
-        courseIntrovideo = convertToEmbedUrl(req.body.courseIntrovideo);
+          uploadedFiles[fieldName] = uploadResult.secure_url;
+        } catch (error) {
+          console.error(`Cloudinary upload failed for ${fileType}:`, error);
+          return res
+            .status(500)
+            .json(new ApiResponse(500, null, `Failed to upload ${fileType}`));
+        }
       }
-    // Create course
+    }
+
+    // Process arrays that might come as JSON strings
+    const arrayFields = [
+      "whatYouWillLearn",
+      "whyCourse",
+      "whoShouldEnroll",
+      "courseHighlights",
+    ];
+    const processedArrays = {};
+    for (const field of arrayFields) {
+      if (req.body[field]) {
+        try {
+          processedArrays[field] =
+            typeof req.body[field] === "string"
+              ? JSON.parse(req.body[field])
+              : req.body[field];
+
+          if (!Array.isArray(processedArrays[field])) {
+            return res
+              .status(400)
+              .json(new ApiResponse(400, null, `${field} must be an array`));
+          }
+        } catch {
+          return res
+            .status(400)
+            .json(new ApiResponse(400, null, `Invalid JSON format for ${field}`));
+        }
+      }
+    }
+
+    // Process boolean fields
+    const isTrendingBool = isTrending === "true" || isTrending === true;
+    const isOfflineBool = isOffline === "true" || isOffline === true;
+
+    // Convert courseIntrovideo to embed URL if provided
+    const courseIntrovideo = rawIntroVideo
+      ? convertToEmbedUrl(rawIntroVideo)
+      : undefined;
+
+    // Create course document
     const course = new Course({
       title,
-      image: localImagePath,
       bundleName,
-      description,
       category,
+      description,
       price: Number(price),
       duration: Number(duration),
       bundle: bundle ? bundle._id : null,
       courseMentorName,
-      videos: formattedVideos,
-      whyCourse,
-      whatYouWillLearn,
-      courseHighlights,
-      whoShouldEnroll,
-      isTrending: isTrending === "true",
-      isOffline: isOffline === "true",
-      pdfPath: localPdfPath,
-      certificatePath: localCertificatePath,
+      videos,
+      isTrending: isTrendingBool,
+      isOffline: isOfflineBool,
       courseIntrovideo,
+      ...uploadedFiles,
+      ...processedArrays,
     });
 
-    console.log("Saving course...");
     await course.save();
 
     // Associate course with bundle
@@ -250,8 +154,6 @@ const createCourse = asynchHandler(async (req, res) => {
       bundle.courses.push(course._id);
       await bundle.save();
     }
-
-    console.log("Course created successfully");
 
     return res
       .status(201)
@@ -264,9 +166,12 @@ const createCourse = asynchHandler(async (req, res) => {
       );
   } catch (error) {
     console.error("Error creating course:", error);
-    throw new ApiError(500, "Internal server error", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Internal server error"));
   }
 });
+
 
 const addVideos = asynchHandler(async (req, res) => {
   const { courseId } = req.params;
@@ -301,9 +206,7 @@ const addVideos = asynchHandler(async (req, res) => {
   }
 });
 
-// Create a new bundle
 
-// Fetch all bundles or specific bundles by name
 
 const getCourseByName = asynchHandler(async (req, res) => {
   const { name } = req.body;
@@ -415,111 +318,14 @@ const getMentorCourses = asynchHandler(async (req, res) => {
   }
 });
 
-// Update a course by its ID
-// const updateCourse = asynchHandler(async (req, res) => {
-//   const { id } = req.params;
-//   console.log("on updating course");
-//   try {
-//     console.log(req.body)
-//     const course = await Course.findByIdAndUpdate(id, req.body, {
-//       new: true,
-//       runValidators: true,
-//     });
 
-//     if (!course) {
-//       throw new ApiError(404, "Course not found");
-//     }
-
-//     return res
-//       .status(200)
-//       .json(new ApiResponse(200, { course }, "Course updated successfully"));
-//   } catch (error) {
-//     console.error(error);
-//     throw new ApiError(500, "Internal server error");
-//   }
-// });
-// const updateCourse = asynchHandler(async (req, res) => {
-//   const { id } = req.params;
-//   console.log("on updating course");
-//   console.log(req.body);
-
-//   try {
-//     const updatedFields = { ...req.body };
-
-//     // ✅ Only parse 'videos' if it's present and a string
-//     if (req.body.videos !== undefined) {
-//       // If it's a string, try to parse it into an array of objects
-//       if (typeof req.body.videos === "string") {
-//         try {
-//           // Ensure the videos field is a valid array of objects
-//           const parsedVideos = JSON.parse(req.body.videos);
-
-//           if (Array.isArray(parsedVideos)) {
-//             updatedFields.videos = parsedVideos;
-//           } else {
-//             return res.status(400).json({
-//               error: "'videos' should be an array of objects, but got something else.",
-//             });
-//           }
-//         } catch (err) {
-//           return res.status(400).json({
-//             error: "Invalid JSON format for 'videos'. It should be a valid array of objects.",
-//           });
-//         }
-//       } else if (Array.isArray(req.body.videos)) {
-//         // If it's already an array, we don't need to parse it
-//         updatedFields.videos = req.body.videos;
-//       } else {
-//         // If 'videos' is neither an array nor a valid JSON string, return an error
-//         return res.status(400).json({
-//           error: "'videos' must be either an array or a valid JSON string representation of an array.",
-//         });
-//       }
-//     }
-
-//     // ✅ Attach file paths only if present
-//     const imageFile = req.files?.imageFile?.[0];
-//     const pdfFile = req.files?.pdfFile?.[0];
-//     const certificateFile = req.files?.certificateFile?.[0];
-
-//     if (imageFile) {
-//       updatedFields.image = `/fileStore/${imageFile.filename}`;
-//     }
-
-//     if (pdfFile) {
-//       updatedFields.pdfPath = `/fileStore/${pdfFile.filename}`;
-//     }
-
-//     if (certificateFile) {
-//       updatedFields.certificatePath = `/fileStore/${certificateFile.filename}`;
-//     }
-
-//     const course = await Course.findByIdAndUpdate(id, updatedFields, {
-//       new: true,
-//       runValidators: true,
-//     });
-
-//     if (!course) {
-//       throw new ApiError(404, "Course not found");
-//     }
-
-//     return res
-//       .status(200)
-//       .json(new ApiResponse(200, { course }, "Course updated successfully"));
-//   } catch (error) {
-//     console.error(error);
-//     throw new ApiError(500, "Internal server error");
-//   }
-// });
 
 const updateCourse = asynchHandler(async (req, res) => {
   const { courseId } = req.params;
 
   try {
-    
-    // Validate the ID format
-  console.log("this is id")
-    console.log(courseId)
+    console.log("this is id", courseId);
+
     if (!mongoose.Types.ObjectId.isValid(courseId)) {
       return res
         .status(400)
@@ -527,30 +333,30 @@ const updateCourse = asynchHandler(async (req, res) => {
     }
 
     const updatedFields = { ...req.body };
-  
+
     // Process videos array
     if (req.body.videos !== undefined) {
       try {
         let parsedVideos;
-    
+
         if (typeof req.body.videos === "string") {
           parsedVideos = JSON.parse(req.body.videos);
         } else {
           parsedVideos = req.body.videos;
         }
-    
+
         if (Array.isArray(parsedVideos)) {
           const validVideos = parsedVideos.every(
             (video) => typeof video === "object" && "title" in video && "url" in video
           );
-    
+
           if (validVideos) {
             // Convert YouTube URLs to embed format
             const processedVideos = parsedVideos.map((video) => ({
               ...video,
               url: convertToEmbedUrl(video.url),
             }));
-    
+
             updatedFields.videos = processedVideos;
           } else {
             return res.status(400).json(
@@ -573,20 +379,30 @@ const updateCourse = asynchHandler(async (req, res) => {
       }
     }
 
-    // Handle file uploads with sanitized filenames
-    ["imageFile", "pdfFile", "certificateFile"].forEach((fileType) => {
+    // Upload files to Cloudinary
+    const fileTypes = ["imageFile", "pdfFile", "certificateFile"];
+    for (const fileType of fileTypes) {
       const file = req.files?.[fileType]?.[0];
       if (file) {
-        const fieldName =
-          fileType === "imageFile"
-            ? "image"
-            : fileType === "pdfFile"
-            ? "pdfPath"
-            : "certificatePath";
+        try {
+          const uploadResult = await uploadCloudinary(file.buffer);
+          // Map to correct field name in DB
+          let fieldName =
+            fileType === "imageFile"
+              ? "image"
+              : fileType === "pdfFile"
+              ? "pdfPath"
+              : "certificatePath";
 
-        updatedFields[fieldName] = `/fileStore/${file.filename}`;
+          updatedFields[fieldName] = uploadResult.secure_url;
+        } catch (error) {
+          console.error(`Cloudinary upload failed for ${fileType}:`, error);
+          return res
+            .status(500)
+            .json(new ApiResponse(500, null, `Failed to upload ${fileType}`));
+        }
       }
-    });
+    }
 
     // Process arrays that might come as strings
     [
@@ -633,18 +449,19 @@ const updateCourse = asynchHandler(async (req, res) => {
         }
       }
     });
-    if(req.body.courseIntrovideo !==undefined){
+
+    // Convert intro video URL to embed format
+    if (req.body.courseIntrovideo !== undefined) {
       updatedFields.courseIntrovideo = convertToEmbedUrl(req.body.courseIntrovideo);
     }
+
     const course = await Course.findByIdAndUpdate(courseId, updatedFields, {
       new: true,
       runValidators: true,
     });
 
     if (!course) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, "Course not found"));
+      return res.status(404).json(new ApiResponse(404, null, "Course not found"));
     }
 
     return res

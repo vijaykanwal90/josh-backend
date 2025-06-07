@@ -12,9 +12,7 @@ router.route('/getBundle/:id').get(getBundleById);
 router.route('/createBundle').post(
     userAuth,
     checkRole(['admin']),
-    upload.fields([
-        { name: 'bundleImage', maxCount: 1 },
-    ]),
+    upload.single('bundleImage'),
     createBundle
 );
 
@@ -25,7 +23,7 @@ router.route('/removeBundle/:id').delete(userAuth, checkRole(['admin']), removeB
 router.route("/:id").patch(
     userAuth,
     checkRole(["admin"]),
-    upload.fields([{ name: "bundleImage", maxCount: 1 }]),
+    upload.single('bundleImage'),
     updateBundle
   );
 export default router;                                                                                                                               

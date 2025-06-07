@@ -12,14 +12,15 @@ router.route('/')
     .post(
         userAuth,
         checkRole(['admin']),
-        upload.fields([{ name: 'galleryImage', maxCount: 1 }]),
+        upload.single('galleryImage'),
         createGallery
     );
 
 router.route('/:id')
     .put(
         userAuth, checkRole(['admin']),
-        upload.fields([{ name: 'galleryImage', maxCount: 1 }]),
+        upload.single('galleryImage'),
+
         updateGallery
     )
     .delete(userAuth, checkRole(['admin']), deleteGalleryImage);

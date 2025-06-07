@@ -16,10 +16,11 @@ import privacyRouter from './routes/privacy.router.js';
 import webinar from './routes/webinar.router.js'
 import mentorrouter from './routes/mentor.router.js'
 import digitalbundle from './routes/digitalBundle.router.js'
+import aboutRouter from './routes/about.router.js'  
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { dirname } from 'path';
 import galleryrouter from './routes/Gallery.router.js'
+import managementRouter from './routes/management.router.js';
 
 const app = express();
 const URL = process.env.FRONTEND_URL;
@@ -64,5 +65,7 @@ app.use('/api/v1/popup',popuprouter);
 app.use('/api/v1/privacy', privacyRouter);
 app.use('/api/v1/gallery', galleryrouter);
 app.use('/api/v1/digitalBundle', digitalbundle);
+app.use('/api/v1/about',aboutRouter);
+app.use('/api/v1/management',managementRouter);
 
 export { app };

@@ -6,6 +6,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Course } from "../models/course.model.js";
 // Add Mentor
 import bcrypt from 'bcryptjs';
+import { uploadCloudinary } from "../utils/Cloudinary.js";
+import fs from "fs"
 const getMentors = asynchHandler (async (req,res)=>{
     try{
         const mentors = await Mentor.find();
@@ -20,59 +22,61 @@ const getMentors = asynchHandler (async (req,res)=>{
     }
 })
 const addMentor = asynchHandler(async (req, res) => {
-    try {
-        console.log("adding mentor");
-        
-        const { name, email, mobileNumber, about, socialLinks, position } = req.body;
-        
-        // Basic validation
-        if (!email) {
-            throw new ApiError(400, "Email is required");
-        } 
-        console.log("mentor position", position);
+  try {
+    console.log("adding mentor");
 
-        // Check if the mentor already exists
-        const existingMentor = await Mentor.findOne({ email });
-        if (existingMentor) {
-            throw new ApiError(400, "Mentor already exists with this email");
-        }
+    const { name, email, mobileNumber, about, socialLinks, position } = req.body;
 
-        // Handle file upload and path creation
-        const mentorImage = req.file;
-        const localMentorImagePath = mentorImage ? `/fileStore/${mentorImage.filename}` : null;
-
-        // Parse socialLinks if it is a string, and ensure it's properly formatted
-        let parsedSocialLinks = [];
-        try {
-            parsedSocialLinks = typeof socialLinks === 'string' ? JSON.parse(socialLinks) : socialLinks;
-        } catch (err) {
-            throw new ApiError(400, "Invalid socialLinks format");
-        }
-
-        // Create mentor data
-        const mentor = await Mentor.create({
-            name,
-            email,
-            mobileNumber,
-            about,
-            socialLinks: parsedSocialLinks,
-            profileImage: localMentorImagePath,
-            position,
-        });
-
-        // Return successful response
-        res.status(201).json(
-            new ApiResponse(201, { mentor }, "Mentor created successfully")
-        );
-    } catch (error) {
-        console.log(error);
-        // Check for custom errors and pass them accordingly
-        if (error instanceof ApiError) {
-            throw error;
-        }
-        throw new ApiError(500, "Internal server error");
+    if (!email) {
+      throw new ApiError(400, "Email is required");
     }
+    console.log("mentor position", position);
+
+    const existingMentor = await Mentor.findOne({ email });
+    if (existingMentor) {
+      throw new ApiError(400, "Mentor already exists with this email");
+    }
+
+    const mentorImage = req.file;
+    let cloudinaryImageUrl = null;
+
+    if (mentorImage) {
+      try {
+        const result = await uploadCloudinary(mentorImage.buffer);
+        cloudinaryImageUrl = result?.secure_url || null;
+      } catch (err) {
+        console.error("Cloudinary upload failed:", err);
+        throw new ApiError(500, "Failed to upload mentor image");
+      }
+    }
+
+    let parsedSocialLinks = [];
+    try {
+      parsedSocialLinks = typeof socialLinks === "string" ? JSON.parse(socialLinks) : socialLinks;
+    } catch (err) {
+      throw new ApiError(400, "Invalid socialLinks format");
+    }
+
+    const mentor = await Mentor.create({
+      name,
+      email,
+      mobileNumber,
+      about,
+      socialLinks: parsedSocialLinks,
+      profileImage: cloudinaryImageUrl,
+      position,
+    });
+
+    res.status(201).json(new ApiResponse(201, { mentor }, "Mentor created successfully"));
+  } catch (error) {
+    console.log(error);
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError(500, "Internal server error");
+  }
 });
+
 const getMentorById = asynchHandler(async (req, res) => {
     const {mentorId} = req.params;
     try {
@@ -226,18 +230,18 @@ const updateMentor = asynchHandler(async (req, res) => {
       }
   
       // ✅ Handle image upload
-
-      if (req.file) {
-        // const file = req.files?.[0];
-        // if (!file) {
-        //   throw new ApiError(400, "File upload failed");
-        // }
-        // console.log("req file")
-        // console.log(req.file)
-        // console.log("mentor image", file);
-        mentorData.profileImage =`/fileStore/${req.file.filename}`; // or whatever field you're using
+       const mentorImage = req.file;
+       let cloudinaryImageUrl = null;
+       if (mentorImage) {
+        try {
+          const result = await uploadCloudinary(mentorImage.buffer);
+          cloudinaryImageUrl = result?.secure_url || null;
+        } catch (err) {
+          console.error("Cloudinary upload failed:", err);
+          throw new ApiError(500, "Failed to upload mentor image");
+        }
       }
-  
+      mentorData.profileImage = cloudinaryImageUrl;
       const mentor = await Mentor.findByIdAndUpdate(id, mentorData, {
         new: true,
         runValidators: true,

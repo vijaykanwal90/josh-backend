@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getUser, updateUser,getAllUser,getUserCourses, getUserIncomeHistory, getUserBundles } from "../controllers/user.controller.js";
+import { getUser, updateUser,getAllUser,getUserCourses, getUserIncomeHistory, getUserBundles ,updateRole} from "../controllers/user.controller.js";
 import { userAuth } from "../middlewares/auth.middleware.js";
 import {checkRole} from "../middlewares/role.middleware.js"
 
@@ -7,6 +7,8 @@ import {checkRole} from "../middlewares/role.middleware.js"
 const router = Router();
 router.use(userAuth);
 router.route('/getUsers').get(checkRole(['admin']),getAllUser)
+router.route('/updateRole').patch(userAuth,checkRole(['admin']),updateRole)
+
 router.route('/:_id/getCourses').get(userAuth,getUserCourses);
 router.route('/:_id/getBundles').get(userAuth,getUserBundles);
 

@@ -1,5 +1,5 @@
 import { Gallery } from "../models/gallery.model.js";
-
+import { uploadCloudinary } from "../utils/Cloudinary.js";
 const getAllGalleries = async (req, res) => {
     try {
         const galleries = await Gallery.find();
@@ -21,15 +21,23 @@ const getGalleryByCategory = async (req, res) => {
  const updateGallery = async (req, res) => {
     const { id } = req.params;
     const { title, category } = req.body;
-    const image  = req.files?.galleryImage?.[0];
+    const galleryImage = req.file;
+    let cloudinaryImageUrl ;
     try {
         const gallery = await Gallery.findByIdAndUpdate(
             id,
             { title, category },
             { new: true }
         );
-        if (image) {
-            gallery.image = `/fileStore/${image.filename}`;
+        if (galleryImage) {
+            try {
+                const result = await uploadCloudinary(galleryImage.buffer);
+                cloudinaryImageUrl = result?.secure_url || null;
+                gallery.image = cloudinaryImageUrl;
+              } catch (err) {
+                console.error("Cloudinary upload failed:", err);
+                throw new ApiError(500, "Failed to upload mentor image");
+              }
         }
         await gallery.save();
        return  res.status(200).json({
@@ -55,16 +63,23 @@ const deleteGalleryImage = async (req, res) => {
 }
 const createGallery = async (req, res) => {
     const { title, category } = req.body;
-    const image = req.files?.galleryImage?.[0];
+    const galleryImage = req.file;
+    let cloudinaryImageUrl ;
     
     try {
-        if (!image) {
-            return res.status(400).json({ message: "Image is required" });
+        if (galleryImage) {
+            try {
+                const result = await uploadCloudinary(galleryImage.buffer);
+                cloudinaryImageUrl = result?.secure_url || null;
+                // gallery.image = cloudinaryImageUrl;
+              } catch (err) {
+                console.error("Cloudinary upload failed:", err);
+                throw new ApiError(500, "Failed to upload mentor image");
+              }
         }
-        const imagePath = `/fileStore/${image.filename}`;
         const gallery = await Gallery.create({
             title,
-            image: imagePath,
+            image: cloudinaryImageUrl,
             category
         });
         res.status(200).json({

@@ -8,31 +8,39 @@ import { Course } from "../models/course.model.js";
 import { ObjectId } from "mongodb";
 // import { Video } from "../models/video.model";
 import mongoose from "mongoose";
-
+import { uploadCloudinary } from "../utils/Cloudinary.js";
 const createBundle = asynchHandler(async (req, res) => {
   const { bundleName, description, price, whyBundle } = req.body;
-  const bundleImage = req.files?.bundleImage?.[0];
+  
   try {
     let bundle = await Bundle.findOne({ bundleName });
    
     if(bundle){
       throw new ApiError(400, "Bundle already exists");
     }
-    const filePath = bundleImage?`/fileStore/${bundleImage.filename}`:null;
-      if(filePath==null){
-        throw new ApiError(400, "Bundle image is required");
+    const bundleImage = req.file;
+    let cloudinaryImageUrl = null;
+
+    if (bundleImage) {
+      try {
+        const result = await uploadCloudinary(bundleImage.buffer);
+        cloudinaryImageUrl = result?.secure_url || null;
+      } catch (err) {
+        console.error("Cloudinary upload failed:", err);
+        throw new ApiError(500, "Failed to upload bundle image");
       }
+    }
       bundle = new Bundle({
         bundleName,
         description,
         price,
         whyBundle,
-        bundleImage: filePath,
+        bundleImage: cloudinaryImageUrl,
         courses: [],
       });
 
       await bundle.save();
-      console.log("bundle created successfyly");
+      console.log("bundle created successfully");
     
     return res
       .status(201)
@@ -46,7 +54,6 @@ const createBundle = asynchHandler(async (req, res) => {
 const updateBundle = asynchHandler(async (req, res) => {
   const { id } = req.params;
 
-  // Validate MongoDB ObjectId
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res
       .status(400)
@@ -60,8 +67,15 @@ const updateBundle = asynchHandler(async (req, res) => {
       throw new ApiError(404, "Bundle not found");
     }
 
-    // Collect updated fields
-    const { bundleName, description, price, whyBundle,isSpecial,discount,hasDiscount } = req.body;
+    const {
+      bundleName,
+      description,
+      price,
+      whyBundle,
+      isSpecial,
+      discount,
+      hasDiscount,
+    } = req.body;
 
     const updates = {};
 
@@ -72,17 +86,25 @@ const updateBundle = asynchHandler(async (req, res) => {
     if (isSpecial !== undefined) updates.isSpecial = isSpecial;
     if (discount !== undefined) updates.discount = discount;
     if (hasDiscount !== undefined) updates.hasDiscount = hasDiscount;
-    if(discount ||  hasDiscount){
+
+    // Apply discount calculation if required
+    if (discount && hasDiscount && price) {
       updates.price = price - (price * discount) / 100;
     }
 
-
-
-    // Handle optional image file
-    const bundleImage = req.files?.bundleImage?.[0];
+    // Handle optional image file upload
+    const bundleImage = req.file;
+    console.log(bundleImage)
     if (bundleImage) {
-      console.log("New bundle image:", bundleImage);
-      updates.bundleImage = `/fileStore/${bundleImage.filename}`;
+      try {
+        const result = await uploadCloudinary(bundleImage.buffer);
+        if (result?.secure_url) {
+          updates.bundleImage = result.secure_url;
+        }
+      } catch (err) {
+        console.error("Cloudinary upload failed:", err);
+        throw new ApiError(500, "Failed to upload bundle image");
+      }
     }
 
     const updatedBundle = await Bundle.findByIdAndUpdate(id, updates, {
@@ -98,6 +120,7 @@ const updateBundle = asynchHandler(async (req, res) => {
     throw new ApiError(500, "Internal server error");
   }
 });
+
 
 
 const getBundles = asynchHandler(async (req, res) => {

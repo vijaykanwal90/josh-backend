@@ -89,6 +89,33 @@ const updateUser = asynchHandler(async (req, res) => {
     }
 }
 );
+const updateRole = asynchHandler(async (req, res) => {
+    try {
+      const { userId } = req.body;
+  
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new ApiError(404, "User not found");
+      }
+  
+      // Toggle role
+      const newRole = user.role === 'admin' ? 'user' : 'admin';
+  
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { role: newRole },
+        { new: true, runValidators: true }
+      );
+  
+      res.status(200).json(
+        new ApiResponse(200, { updatedUser }, "User role updated successfully")
+      );
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json(new ApiResponse(500, {}, "Failed to update user role"));
+    }
+  });
+  
 const getAllUser = asynchHandler(async(req,res)=>{
     try {
         const users = await User.find();
@@ -123,4 +150,4 @@ const getUserIncomeHistory = asynchHandler(async (req, res) => {
 }
 );
 
-export { updateUser, getUser,getAllUser ,getUserCourses,getUserIncomeHistory,getUserBundles};
+export { updateUser, getUser,getAllUser ,getUserCourses,getUserIncomeHistory,getUserBundles,updateRole};
