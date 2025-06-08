@@ -60,6 +60,8 @@
 
 import multer from "multer";
 import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
 
 // Get __filename and __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -98,13 +100,11 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Use memory storage instead of disk
-const storage = multer.memoryStorage();
 
 // Create multer instance for in-memory uploads
 export const upload = multer({
   storage,
-  fileFilter,
+  // fileFilter,
   limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB max
 });
 

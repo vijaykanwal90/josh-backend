@@ -330,6 +330,9 @@ const updateDigitalBundle = asynchHandler(async (req, res) => {
             CertificationSection, FAQSchema
         } = req.body;
 
+        console.log("Update Digital Bundle Request Body:", req.files);
+        
+
         // Find existing bundle
         const existingBundle = await DigitalBundle.findById(id);
         if (!existingBundle) {
@@ -376,7 +379,19 @@ const updateDigitalBundle = asynchHandler(async (req, res) => {
                 throw new ApiError(400, "Video must be an array");
             }
             
-            const videoFiles = req.files?.filter(file => file.fieldname === 'videoFiles') || [];
+            // Get all video files with indexed field names
+            const videoFiles = req.files?.filter(file => file.fieldname.startsWith('videoFile_')) || [];
+            console.log("Video Files:", videoFiles);
+            
+            // Create index-to-file mapping
+            const videoMap = new Map();
+            videoFiles.forEach(file => {
+                const index = parseInt(file.fieldname.split('_')[1]);
+                if (!isNaN(index)) {
+                    videoMap.set(index, file);
+                }
+            });
+
             const finalVideoArray = [];
 
             for (let i = 0; i < parsedVideo.length; i++) {
@@ -386,12 +401,19 @@ const updateDigitalBundle = asynchHandler(async (req, res) => {
                     throw new ApiError(400, `Missing video title at index ${i}`);
                 }
 
-                // Use existing URL if no new file provided
+                // Start with existing URL
                 let videoUrl = vid.videoFile || '';
+                console.log("Video URL before upload:", videoUrl);
                 
-                // Upload new file if provided
-                if (videoFiles[i]) {
-                    videoUrl = await uploadFile(videoFiles[i], "video");
+                // Upload new file if provided for this specific index
+                if (videoMap.has(i)) {
+                    videoUrl = await uploadFile(videoMap.get(i), "video");
+                    console.log("Video URL after upload:", videoUrl);
+                }
+
+                // Validate video URL exists
+                if (!videoUrl) {
+                    throw new ApiError(400, `Video file is required for video at index ${i}`);
                 }
 
                 finalVideoArray.push({
@@ -406,7 +428,9 @@ const updateDigitalBundle = asynchHandler(async (req, res) => {
         // Process bonusSkills
         if (bonusSkills !== undefined) {
             let parsedBonusSkills = JSON.parse(bonusSkills);
-            const bonusSkillsImages = req.files?.filter(file => file.fieldname === 'bonusSkillsImages') || [];
+            
+            // Get all bonus skills images with indexed field names
+            const bonusSkillsImages = req.files?.filter(file => file.fieldname.startsWith('bonusSkillsImage_')) || [];
             
             // Validate bonusSkills structure
             if (!parsedBonusSkills.title) {
@@ -416,18 +440,28 @@ const updateDigitalBundle = asynchHandler(async (req, res) => {
                 throw new ApiError(400, "Bonus skills images must be an array");
             }
             
-            // Process images only if new files are provided
-            const updatedImages = [...parsedBonusSkills.images];
+            // Create index-to-file mapping
+            const imageMap = new Map();
+            bonusSkillsImages.forEach(file => {
+                const index = parseInt(file.fieldname.split('_')[1]);
+                if (!isNaN(index)) {
+                    imageMap.set(index, file);
+                }
+            });
             
-            for (let i = 0; i < bonusSkillsImages.length; i++) {
-                if (bonusSkillsImages[i]) {
-                    const imageUrl = await uploadFile(bonusSkillsImages[i]);
-                    // Replace specific index with new URL
-                    if (i < updatedImages.length) {
-                        updatedImages[i] = imageUrl;
-                    } else {
-                        updatedImages.push(imageUrl);
-                    }
+            // Update images only for indexes with new files
+            const updatedImages = [...parsedBonusSkills.images];
+            for (let i = 0; i < updatedImages.length; i++) {
+                if (imageMap.has(i)) {
+                    updatedImages[i] = await uploadFile(imageMap.get(i));
+                }
+            }
+            
+            // Add new images beyond the original array length
+            const maxIndex = Math.max(...imageMap.keys());
+            for (let i = updatedImages.length; i <= maxIndex; i++) {
+                if (imageMap.has(i)) {
+                    updatedImages.push(await uploadFile(imageMap.get(i)));
                 }
             }
             
@@ -448,7 +482,7 @@ const updateDigitalBundle = asynchHandler(async (req, res) => {
                 throw new ApiError(400, "Section one highlights must be a non-empty array");
             }
             
-            // Process image only if new file is provided
+            // Only process image if a file was actually uploaded
             if (sectionOneImage.length > 0) {
                 parsedSectionOne.images = await uploadFile(sectionOneImage[0]);
             } else if (!parsedSectionOne.images) {
@@ -462,8 +496,8 @@ const updateDigitalBundle = asynchHandler(async (req, res) => {
         // Process sectionTwo
         if (sectionTwo !== undefined) {
             let parsedSectionTwo = JSON.parse(sectionTwo);
-            const sectionTwoImage = req.files?.filter(file => file.fieldname === 'sectionTwoImage') || [];
-
+            const sectionTwoImages = req.files?.filter(file => file.fieldname.startsWith('sectionTwoImage_')) || [];
+            
             // Validate required fields
             if (!parsedSectionTwo.title) {
                 throw new ApiError(400, "Section two title is required");
@@ -472,10 +506,19 @@ const updateDigitalBundle = asynchHandler(async (req, res) => {
                 throw new ApiError(400, "Section two highlights must be a non-empty array");
             }
 
-            // Process images only if new files are provided
-            for (let i = 0; i < sectionTwoImage.length; i++) {
-                if (sectionTwoImage[i] && i < parsedSectionTwo.highlights.length) {
-                    const imageUrl = await uploadFile(sectionTwoImage[i]);
+            // Create a map of index to file
+            const imageMap = new Map();
+            sectionTwoImages.forEach(file => {
+                const index = parseInt(file.fieldname.split('_')[1]);
+                if (!isNaN(index)) {
+                    imageMap.set(index, file);
+                }
+            });
+
+            // Process images with their correct indexes
+            for (let i = 0; i < parsedSectionTwo.highlights.length; i++) {
+                if (imageMap.has(i)) {
+                    const imageUrl = await uploadFile(imageMap.get(i));
                     parsedSectionTwo.highlights[i].images = imageUrl;
                 }
             }
@@ -486,7 +529,9 @@ const updateDigitalBundle = asynchHandler(async (req, res) => {
         // Process sectionThree
         if (sectionThree !== undefined) {
             let parsedSectionThree = JSON.parse(sectionThree);
-            const sectionThreeImage = req.files?.filter(file => file.fieldname === 'sectionThreeImage') || [];
+            const sectionThreeImages = req.files?.filter(file => file.fieldname.startsWith('sectionThreeImage_')) || [];
+            console.log("Section Three Images:", sectionThreeImages);
+            
             
             // Validate required fields
             if (!parsedSectionThree.title) {
@@ -495,12 +540,24 @@ const updateDigitalBundle = asynchHandler(async (req, res) => {
             if (!Array.isArray(parsedSectionThree.highlights) || !parsedSectionThree.highlights.length) {
                 throw new ApiError(400, "Section three highlights must be a non-empty array");
             }
-            
-            // Process images only if new files are provided
-            for (let i = 0; i < sectionThreeImage.length; i++) {
-                if (sectionThreeImage[i] && i < parsedSectionThree.highlights.length) {
-                    const imageUrl = await uploadFile(sectionThreeImage[i]);
-                    parsedSectionThree.highlights[i].images = imageUrl;
+
+            // Create index-to-file mapping
+            const imageMap = new Map();
+            sectionThreeImages.forEach(file => {
+                // Correct index extraction - use last part after underscore
+                const parts = file.fieldname.split('_');
+                const index = parseInt(parts[parts.length - 1]);
+                if (!isNaN(index)) {
+                    imageMap.set(index, file);
+                }
+            });
+
+            // Update highlights with new images
+            for (let i = 0; i < parsedSectionThree.highlights.length; i++) {
+                if (imageMap.has(i)) {
+                    parsedSectionThree.highlights[i].images = await uploadFile(imageMap.get(i));
+                    console.log("Updated Section Three Highlight Image:", parsedSectionThree.highlights[i].images);
+                    
                 }
             }
             
