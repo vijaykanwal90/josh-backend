@@ -394,62 +394,87 @@ const rescheduleWebinar = asynchHandler(async (req, res) => {
     }
 });
 
-// register for webinar
 const registerForWebinar = asynchHandler(async (req, res) => {
     try {
         const webinarId = req.params.id;
         const { name, email, mobile } = req.body;
-        const requiredFields = [
-            { field: name, name: "Name" },
-            { field: email, name: "Email" },
-            { field: mobile, name: "Mobile" }
-        ];
-        for (const { field, name } of requiredFields) {
-            if (!field) {
-                throw new ApiError(400, `${name} is required`);
-            }
-        }
+        
+        // Validate required fields
+        if (!name) throw new ApiError(400, "Name is required");
+        if (!email) throw new ApiError(400, "Email is required");
+        if (!mobile) throw new ApiError(400, "Mobile is required");
+        
+        // Find webinar
         const webinar = await Webinar.findById(webinarId);
-        if (!webinar) {
-            throw new ApiError(404, "Webinar not found");
-        }
-        const userExists = webinar.webinarUsers.find(user => user.email === email);
-        if (userExists) {
-            throw new ApiError(400, "User already registered for this webinar");
-        }
-        const user = {
-            name,
-            email,
-            mobile,
-            registeredAt: new Date()
-        };
+        if (!webinar) throw new ApiError(404, "Webinar not found");
+        
+        // Check if user already registered
+        const userExists = webinar.webinarUsers.some(user => user.email === email);
+        if (userExists) throw new ApiError(409, "User already registered for this webinar");
+        
+        // Create user object
+        const user = { name, email, mobile, registeredAt: new Date() };
+        
+        // Add user to webinar
         webinar.webinarUsers.push(user);
-        await webinar.save();
-        await sendMail({
-            from: process.env.MAIL,
-            to: email,
-            subject: `Webinar Registration Confirmation - ${webinar.title}`,
-            text: `Hi ${name},\n\nYou have successfully registered for the webinar: ${webinar.title}.\nDate: ${webinar.date}\n\nThank you!`
-        });
-        client.messages
-        .create({
-            body: `Hi ${name},\n\nYou have successfully registered for the webinar: ${webinar.title}.\nDate: ${webinar.date}\n\nThank you!`,
-            from: 'whatsapp:+14155238886',
-            to: 'whatsapp:+919579396984'
-        })
-        .then(message => console.log('WhatsApp message sent:', message.sid))
-        .catch(error => console.error('Error sending WhatsApp message:', error));
+        const updatedWebinar = await webinar.save();
+        
+        try {
+            // Send email
+            await sendMail({
+                from: process.env.MAIL,
+                to: email,
+                subject: `🎓 Thank You for Registering for the ${webinar.title}!`,
+text: `Dear ${name},
 
-        res.status(200)
-        .json(new ApiResponse
-            (
-                200, 
-                { user }, 
-                "User registered for webinar successfully"
-            ));
+Thank you for registering for the ${webinar.title} on ${new Date(webinar.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} at ${new Date(webinar.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}.
+
+We’re excited to guide you through Microsoft Dynamics and Odoo ERP programs—both offering a 100% Job Placement Guarantee with salaries up to ₹5 Lakh.
+
+Webinar Details:
+- Date: ${new Date(webinar.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+- Time: ${new Date(webinar.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+- Mode: Online (link will be shared via email & WhatsApp 1 day before)
+
+Next Step:
+Join our official WhatsApp group to receive the webinar access link: https://chat.whatsapp.com/HkoFx9rOZdu6I29RDoUpuw
+
+If you have questions:
+WhatsApp: +91-8191980334
+Website: www.joshguru.com
+Email: Joshgurupvtltd@gmail.com
+
+Stay tuned—great things are coming your way!
+
+Best Regards,
+Team Joshguru
+"Learn Today, Lead Tomorrow"
+`
+            });
+        } catch (emailError) {
+            console.error("Email sending failed:", emailError);
+            // Don't fail the request, just log the error
+        }
+
+        // Send success response
+        res.status(201).json(
+            new ApiResponse(201, { user }, "User registered for webinar successfully")
+        );
+        
     } catch (error) {
-        console.log(error);
-        throw new ApiError(500, error.message || "Internal server error");
+        // Preserve original status code if it's an ApiError
+        const statusCode = error instanceof ApiError ? error.statusCode : 500;
+        const message = error instanceof ApiError ? error.message : "Internal server error";
+        
+        // Log only server errors
+        if (statusCode >= 500) {
+            console.error("Webinar registration error:", error);
+        }
+        
+        // Send proper error response
+        res.status(statusCode).json(
+            new ApiResponse(statusCode, null, message)
+        );
     }
 });
 

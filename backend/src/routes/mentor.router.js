@@ -1,6 +1,6 @@
 import express from "express";
 import { checkRole } from "../middlewares/role.middleware.js";
-import { upload, handleMulterError } from "../middlewares/multer.middleware.js";
+import { upload } from "../middlewares/multer.middleware.js";
 import {
   getMentors,
   addMentor,

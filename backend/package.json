@@ -25,8 +25,9 @@
     "mongoose-aggregate-paginate-v2": "^1.1.4",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.10.1",
-    "streamifier": "^0.1.1",
-    "twilio": "^5.5.2"
+    "twilio": "^5.5.2",
+    "uuid": "^11.1.0",
+    "streamifier": "^0.1.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
