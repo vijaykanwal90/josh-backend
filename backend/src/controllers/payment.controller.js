@@ -97,7 +97,7 @@ const webHookHandler = asynchHandler(async (req, res) => {
        throw new ApiError(500, "Internal server error: Webhook secret not configured");
      }
    
-     const isSignatureValid = validateWebhookSignature(req.body, razorpaySignature, secret);
+     const isSignatureValid = validateWebhookSignature(req.rawBody, razorpaySignature, secret);
    
      if (!isSignatureValid) {
        throw new ApiError(400, "Invalid webhook signature");
