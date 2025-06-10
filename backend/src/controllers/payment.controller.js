@@ -102,14 +102,15 @@ const webHookHandler = asynchHandler(async (req, res) => {
   
   // Safely extract paymentDetails
   const paymentDetails = req.body?.payload?.payment?.entity;
+  console.log("Webhook Info: Payment Details:", JSON.stringify(paymentDetails));
   
-  if (!paymentDetails || !paymentDetails.order_id) {
+  if (!paymentDetails || !paymentDetails?.orderId) {
     console.error("Webhook Error: Invalid payment payload:", JSON.stringify(req.body));
     throw new ApiError(400, "Invalid payment payload. Order ID missing.");
   }
   
   // Correct usage
-  const payment = await Payment.findOne({ orderId: paymentDetails.order_id });
+  const payment = await Payment.findOne({ orderId: paymentDetails.orderId});
 
        console.log(payment)
    
