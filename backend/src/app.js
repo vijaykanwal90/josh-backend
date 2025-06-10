@@ -21,6 +21,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import galleryrouter from './routes/Gallery.router.js'
 import managementRouter from './routes/management.router.js';
+import paymentRouter from './routes/payment.router.js';
 
 const app = express();
 const URL = process.env.FRONTEND_URL;
@@ -67,5 +68,6 @@ app.use('/api/v1/gallery', galleryrouter);
 app.use('/api/v1/digitalBundle', digitalbundle);
 app.use('/api/v1/about',aboutRouter);
 app.use('/api/v1/management',managementRouter);
+app.use('/api/v1/payment',paymentRouter);
 
 export { app };
