@@ -100,7 +100,7 @@ const webHookHandler = asynchHandler(async (req, res) => {
        throw new ApiError(400, "Invalid webhook signature");
      }
    
-     // Step 2: Process the 'order.paid' event
+    
       const paymentDetails = req.body.payload.payment.entity     
 
        // Find our internal payment record
@@ -129,7 +129,6 @@ const webHookHandler = asynchHandler(async (req, res) => {
        
        payment.userId = user._id;
        payment.status = paymentDetails.status;
-       await payment.save();
        try {
          for (const bundleIdToAssign of payment.bundleIds) {
            console.log(`Attempting to assign bundle ${bundleIdToAssign} to user ${user._id}`);
@@ -221,14 +220,13 @@ const webHookHandler = asynchHandler(async (req, res) => {
          // All assignments succeeded, now save the user and mark payment as completed
          await user.save({ validateBeforeSave: false });
          
-         payment.status = 'completed';
          await payment.save()
          console.log(`Successfully fulfilled all items for Order ID: ${paymentDetails.orderId}`);
    
        } catch (error) {
          // If ANY assignment fails, we catch it here.
          payment.status = 'failed';
-         payment.notes.error = error.message || "An unknown error occurred during item assignment.";
+        
          console.error(`Webhook CRITICAL: Fulfillment failed for Order ID ${paymentDetails.orderId}. Error: ${error.message}`);
        }
    
