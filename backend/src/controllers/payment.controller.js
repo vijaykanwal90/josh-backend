@@ -86,25 +86,31 @@ const createPayment = asynchHandler(async (req, res) => {
 const webHookHandler = asynchHandler(async (req, res) => {
   // Step 1: Signature Validation
  try {
-     const razorpaySignature = req.headers["x-razorpay-signature"];
-     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
-     if (!secret) {
-        console.error("RAZORPAY_WEBHOOK_SECRET is not configured in .env file");
-        throw new ApiError(500, "Internal server error: Webhook secret not configured");
-      }
-    
-   
-     const isSignatureValid = validateWebhookSignature(req.rawBody, razorpaySignature, secret);
-   
-     if (!isSignatureValid) {
-       throw new ApiError(400, "Invalid webhook signature");
-     }
-   
-    
-      const paymentDetails = req.body.payload.payment.entity     
+  const razorpaySignature = req.headers["x-razorpay-signature"];
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  
+  if (!secret) {
+    throw new ApiError(500, "Webhook secret not configured");
+  }
+  
+  // Validate signature
+  const isSignatureValid = validateWebhookSignature(req.rawBody, razorpaySignature, secret);
+  
+  if (!isSignatureValid) {
+    throw new ApiError(400, "Invalid webhook signature");
+  }
+  
+  // Safely extract paymentDetails
+  const paymentDetails = req.body?.payload?.payment?.entity;
+  
+  if (!paymentDetails || !paymentDetails.order_id) {
+    console.error("Webhook Error: Invalid payment payload:", JSON.stringify(req.body));
+    throw new ApiError(400, "Invalid payment payload. Order ID missing.");
+  }
+  
+  // Correct usage
+  const payment = await Payment.findOne({ orderId: paymentDetails.order_id });
 
-       // Find our internal payment record
-       const payment = await Payment.findOne({ orderId: paymentDetails.orderId });
        console.log(payment)
    
        if (!payment) {
