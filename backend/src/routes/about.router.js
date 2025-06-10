@@ -9,15 +9,10 @@ console.log("About Router Loaded");
 // Define the about page route
 router.route("/").get(getAboutPage);
 // Create About Page (only if not exists)
-router.route("/create").post(userAuth,checkRole(['admin']),upload.fields([
-    { name: "bannerImage", maxCount: 1 },
-    { name: "founderImage", maxCount: 1 }
-]), createAbout);
+router.route("/create").post(userAuth,checkRole(['admin']),upload.single("bannerImage"), createAbout);
 // Update About Page
-router.route("/update").put(userAuth,checkRole(['admin']),upload.fields([
-    { name: "bannerImage", maxCount: 1 },
-    { name: "founderImage", maxCount: 1 }
-]), updateAbout);
+router.route("/update").put(userAuth,checkRole(['admin']),upload.single(
+    'bannerImage'), updateAbout);
 
 export default router;
 

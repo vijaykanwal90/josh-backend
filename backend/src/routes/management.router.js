@@ -7,7 +7,7 @@ import {getManagementTeam, createManagement, deleteManagement } from "../control
 const router = Router();
 console.log("About Router Loaded");
 // Define the about page route
-router.route("/").get(getManagementTeam);
+router.route("/getTeam").get(getManagementTeam);
 // Create About Page (only if not exists)
 router.route("/create").post(userAuth,checkRole(['admin']),upload.single('image'), createManagement);
 // Update About Page

@@ -68,7 +68,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Define the upload directory path
-const uploadPath = path.join(__dirname, "../../../..", "josh-web/BACKEND/public/temp");
+const uploadPath = path.join(__dirname, "../../", "public/temp");
 console.log("multer")
 // Ensure that the directory exists (create it if it doesn't exist)
 if (!fs.existsSync(uploadPath)) {

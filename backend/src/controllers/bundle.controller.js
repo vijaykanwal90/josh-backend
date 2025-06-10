@@ -23,7 +23,7 @@ const createBundle = asynchHandler(async (req, res) => {
 
     if (bundleImage) {
       try {
-        const result = await uploadCloudinary(bundleImage.buffer);
+        const result = await uploadCloudinary(bundleImage.path);
         cloudinaryImageUrl = result?.secure_url || null;
       } catch (err) {
         console.error("Cloudinary upload failed:", err);
@@ -97,7 +97,7 @@ const updateBundle = asynchHandler(async (req, res) => {
     console.log(bundleImage)
     if (bundleImage) {
       try {
-        const result = await uploadCloudinary(bundleImage.buffer);
+        const result = await uploadCloudinary(bundleImage.path);
         if (result?.secure_url) {
           updates.bundleImage = result.secure_url;
         }

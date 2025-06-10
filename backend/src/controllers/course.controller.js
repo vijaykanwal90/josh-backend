@@ -72,7 +72,7 @@ const createCourse = asynchHandler(async (req, res) => {
       const file = req.files?.[fileType]?.[0];
       if (file) {
         try {
-          const uploadResult = await uploadCloudinary(file.buffer);
+          const uploadResult = await uploadCloudinary(file.path);
           // Map field names
           let fieldName =
             fileType === "imageFile"
@@ -385,7 +385,7 @@ const updateCourse = asynchHandler(async (req, res) => {
       const file = req.files?.[fileType]?.[0];
       if (file) {
         try {
-          const uploadResult = await uploadCloudinary(file.buffer);
+          const uploadResult = await uploadCloudinary(file.path);
           // Map to correct field name in DB
           let fieldName =
             fileType === "imageFile"

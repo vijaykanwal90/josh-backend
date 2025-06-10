@@ -25,24 +25,24 @@ import { uploadCloudinary } from "../utils/Cloudinary.js";
 // Create About Page (only if not exists)
  const createAbout = asynchHandler(async (req, res) => {
  try {
-  const bannerImage = req.files?.bannerImage ? req.files.bannerImage[0] : null;
-  const founderImage = req.files?.founderImage ? req.files.founderImage[0] : null;
-  let cloudinaryfounderImageImageUrl = null;
+  const bannerImage = req.file;
+  // const founderImage = req.files?.founderImage ? req.files.founderImage[0] : null;
+  // let cloudinaryfounderImageImageUrl = null;
   let cloudinaryBannerImageUrl = null
 
-  if (cloudinaryfounderImageImageUrl) {
-    try {
-      const result = await uploadCloudinary(founderImage.buffer);
-      cloudinaryfounderImageImageUrl = result?.secure_url || null;
-    } catch (err) {
-      console.error("Cloudinary upload failed to upload founderImage:", err);
-      throw new ApiError(500, "Failed to upload bundle image");
-    }
+  // if (cloudinaryfounderImageImageUrl) {
+  //   try {
+  //     const result = await uploadCloudinary(founderImage.path);
+  //     cloudinaryfounderImageImageUrl = result?.secure_url || null;
+  //   } catch (err) {
+  //     console.error("Cloudinary upload failed to upload founderImage:", err);
+  //     throw new ApiError(500, "Failed to upload bundle image");
+  //   }
 
-  }
+  // }
   if (cloudinaryBannerImageUrl) {
     try {
-      const result = await uploadCloudinary(bannerImage.buffer);
+      const result = await uploadCloudinary(bannerImage.path);
       cloudinaryBannerImageUrl = result?.secure_url || null;
     } catch (err) {
       console.error("Cloudinary upload failed to upload bannerImage:", err);
@@ -59,7 +59,7 @@ import { uploadCloudinary } from "../utils/Cloudinary.js";
    const ourVision = req.body.ourVision;
    const aboutFounder = req.body.aboutFounder;
    const bannerImageUrl = cloudinaryBannerImageUrl || null;
-    const founderImageUrl = cloudinaryfounderImageImageUrl || null;
+    // const founderImageUrl = cloudinaryfounderImageImageUrl || null;
    
     if (!description || !ourMission || !ourVision || !aboutFounder) {
       throw new ApiError(400, "All fields are required");
@@ -70,8 +70,8 @@ import { uploadCloudinary } from "../utils/Cloudinary.js";
      ourMission,
      ourVision,
      aboutFounder,
-     bannerImage: bannerImageUrl,
-     founderImage: founderImageUrl
+     bannerImage: bannerImageUrl
+    //  founderImage: founderImageUrl
    });
     console.log("About Page created successfully:", about);
    if (!about) {
@@ -92,7 +92,7 @@ import { uploadCloudinary } from "../utils/Cloudinary.js";
 // Update About Page
 const updateAbout = asynchHandler(async (req, res) => {
   try {
-    console.log("Updating About Page", req.body);
+    console.log("Updating About Page");
 
     const about = await About.findOne();
     if (!about) {
@@ -100,15 +100,15 @@ const updateAbout = asynchHandler(async (req, res) => {
     }
 
     const { description, ourMission, ourVision, aboutFounder } = req.body;
-    const bannerImageFile = req.files?.bannerImage?.[0] || null;
-    const founderImageFile = req.files?.founderImage?.[0] || null;
-
+    const bannerImageFile = req.file || null;
+    // const founderImageFile = req.files?.founderImage?.[0] || null;
+   console.log(bannerImageFile)
     let cloudinaryBannerImageUrl = null;
-    let cloudinaryFounderImageUrl = null;
+    // let cloudinaryFounderImageUrl = null;
 
     if (bannerImageFile) {
       try {
-        const result = await uploadCloudinary(bannerImageFile.buffer);
+        const result = await uploadCloudinary(bannerImageFile.path);
         cloudinaryBannerImageUrl = result?.secure_url || null;
       } catch (err) {
         console.error("Cloudinary upload failed for bannerImage:", err);
@@ -116,15 +116,15 @@ const updateAbout = asynchHandler(async (req, res) => {
       }
     }
 
-    if (founderImageFile) {
-      try {
-        const result = await uploadCloudinary(founderImageFile.buffer);
-        cloudinaryFounderImageUrl = result?.secure_url || null;
-      } catch (err) {
-        console.error("Cloudinary upload failed for founderImage:", err);
-        throw new ApiError(500, "Failed to upload founder image");
-      }
-    }
+    // if (founderImageFile) {
+    //   try {
+    //     const result = await uploadCloudinary(founderImageFile.buffer);
+    //     cloudinaryFounderImageUrl = result?.secure_url || null;
+    //   } catch (err) {
+    //     console.error("Cloudinary upload failed for founderImage:", err);
+    //     throw new ApiError(500, "Failed to upload founder image");
+    //   }
+    // }
 
     // Build the update object dynamically
     const updateData = {
@@ -137,9 +137,9 @@ const updateAbout = asynchHandler(async (req, res) => {
     if (cloudinaryBannerImageUrl) {
       updateData.bannerImage = cloudinaryBannerImageUrl;
     }
-    if (cloudinaryFounderImageUrl) {
-      updateData.founderImage = cloudinaryFounderImageUrl;
-    }
+    // if (cloudinaryFounderImageUrl) {
+    //   updateData.founderImage = cloudinaryFounderImageUrl;
+    // }
 
     // Perform a single update operation
     const updated = await About.findByIdAndUpdate(about._id, updateData, {

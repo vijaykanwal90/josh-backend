@@ -26,10 +26,14 @@ const createManagement = asynchHandler(async(req,res)=>{
         throw new ApiError(400, "Management member already exists with this name");
     }
     const image = req.file;
+    console.log(image)
     let cloudinaryImageUrl = null;
     if (image) {
         try {
-            const result = await uploadCloudinary(image.buffer);
+            console.log(image.buffer)
+            const result = await uploadCloudinary(image.path);
+            console.log(result)
+            console.log("this is for testing")
             cloudinaryImageUrl = result?.secure_url || null;
         } catch (err) {
             console.error("Cloudinary upload failed:", err);
@@ -41,6 +45,7 @@ const createManagement = asynchHandler(async(req,res)=>{
         role,
         image: cloudinaryImageUrl || "https://imgs.search.brave.com/NMzO0gk1mG66HLjobL6cKbzIGQj-Z1vMNZ1sq044kmE/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YXMuc2VydmljZXMu/Y29tL2ltYWdlcy9k/ZXYvZGVmYXVsdC1w/b3J0cmFpdC5wbmc"
     });
+    
     return res.status(201).json({
         success: true,
         message: "Management member created successfully",

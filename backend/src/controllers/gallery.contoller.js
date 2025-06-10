@@ -31,7 +31,7 @@ const getGalleryByCategory = async (req, res) => {
         );
         if (galleryImage) {
             try {
-                const result = await uploadCloudinary(galleryImage.buffer);
+                const result = await uploadCloudinary(galleryImage.path);
                 cloudinaryImageUrl = result?.secure_url || null;
                 gallery.image = cloudinaryImageUrl;
               } catch (err) {
@@ -69,7 +69,7 @@ const createGallery = async (req, res) => {
     try {
         if (galleryImage) {
             try {
-                const result = await uploadCloudinary(galleryImage.buffer);
+                const result = await uploadCloudinary(galleryImage.path);
                 cloudinaryImageUrl = result?.secure_url || null;
                 // gallery.image = cloudinaryImageUrl;
               } catch (err) {

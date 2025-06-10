@@ -42,7 +42,7 @@ const addMentor = asynchHandler(async (req, res) => {
 
     if (mentorImage) {
       try {
-        const result = await uploadCloudinary(mentorImage.buffer);
+        const result = await uploadCloudinary(mentorImage?.path);
         cloudinaryImageUrl = result?.secure_url || null;
       } catch (err) {
         console.error("Cloudinary upload failed:", err);
@@ -234,7 +234,7 @@ const updateMentor = asynchHandler(async (req, res) => {
        let cloudinaryImageUrl = null;
        if (mentorImage) {
         try {
-          const result = await uploadCloudinary(mentorImage.buffer);
+          const result = await uploadCloudinary(mentorImage.path);
           cloudinaryImageUrl = result?.secure_url || null;
         } catch (err) {
           console.error("Cloudinary upload failed:", err);
