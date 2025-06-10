@@ -38,10 +38,11 @@ const corsOptions = {
 app.use(cors(corsOptions))
 app.options("*",cors(corsOptions)) // now added 
 
-app.use(express.json(
-    { verify: (req, res, buf) => {
-        req.rawBody = buf.toString();
-      }, limit: "16kb" }));
+app.use(express.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf.toString();
+    }
+  }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
 // In your Express backend
