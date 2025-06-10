@@ -144,44 +144,24 @@ const createPayment = asynchHandler(async (req, res) => {
   
           if (!user.bundles.includes(bundle._id)) {
             user.bundles.push(bundle._id);
+          }
+          if (!bundle.students.includes(user._id)) {
             bundle.students.push(user._id);
-            user.canRefer = true;
+          }
   
-            // Assign all lower-priced bundles
-            const lowerBundles = await Bundle.find({ price: { $lt: bundle.price } });
-            for (const lower of lowerBundles) {
-              if (!user.bundles.includes(lower._id)) user.bundles.push(lower._id);
-              if (!lower.students.includes(user._id)) {
-                lower.students.push(user._id);
-                await lower.save({ validateBeforeSave: false });
-              }
+          user.canRefer = true;
+  
+          // Assign lower-priced bundles and their courses
+          const lowerBundles = await Bundle.find({ price: { $lt: bundle.price } }).populate('courses');
+          for (const lower of lowerBundles) {
+            if (!user.bundles.includes(lower._id)) {
+              user.bundles.push(lower._id);
+            }
+            if (!lower.students.includes(user._id)) {
+              lower.students.push(user._id);
             }
   
-            // Referral logic
-            if (user.referredByCode) {
-              const oneLevel = await User.findOne({ sharableReferralCode: user.referredByCode });
-              if (oneLevel) {
-                oneLevel.total_income += bundle.price * 0.25;
-                if (!oneLevel.myTeam.includes(user._id)) oneLevel.myTeam.push(user._id);
-                oneLevel.totalTeam += 1;
-                oneLevel.incomeHistory.push({ amount: bundle.price * 0.25, from: user._id });
-  
-                if (oneLevel.referredByCode) {
-                  const twoLevel = await User.findOne({ sharableReferralCode: oneLevel.referredByCode });
-                  if (twoLevel) {
-                    twoLevel.total_income += bundle.price * 0.30;
-                    if (!twoLevel.myTeam.includes(user._id)) twoLevel.myTeam.push(user._id);
-                    twoLevel.totalTeam += 1;
-                    twoLevel.incomeHistory.push({ amount: bundle.price * 0.30, from: user._id });
-                    await twoLevel.save({ validateBeforeSave: false });
-                  }
-                }
-  
-                await oneLevel.save({ validateBeforeSave: false });
-              }
-            }
-  
-            for (const course of bundle.courses) {
+            for (const course of lower.courses) {
               if (!user.courses.includes(course._id)) user.courses.push(course._id);
               if (!course.students.includes(user._id)) {
                 course.students.push(user._id);
@@ -189,11 +169,43 @@ const createPayment = asynchHandler(async (req, res) => {
               }
             }
   
-            await bundle.save({ validateBeforeSave: false });
-            console.log(`Bundle ${bundleIdToAssign} assigned.`);
-          } else {
-            console.log(`User already has bundle ${bundleIdToAssign}. Skipping.`);
+            await lower.save({ validateBeforeSave: false });
           }
+  
+          // Referral logic
+          if (user.referredByCode) {
+            const oneLevel = await User.findOne({ sharableReferralCode: user.referredByCode });
+            if (oneLevel) {
+              oneLevel.total_income += bundle.price * 0.25;
+              if (!oneLevel.myTeam.includes(user._id)) oneLevel.myTeam.push(user._id);
+              oneLevel.totalTeam += 1;
+              oneLevel.incomeHistory.push({ amount: bundle.price * 0.25, from: user._id });
+  
+              if (oneLevel.referredByCode) {
+                const twoLevel = await User.findOne({ sharableReferralCode: oneLevel.referredByCode });
+                if (twoLevel) {
+                  twoLevel.total_income += bundle.price * 0.30;
+                  if (!twoLevel.myTeam.includes(user._id)) twoLevel.myTeam.push(user._id);
+                  twoLevel.totalTeam += 1;
+                  twoLevel.incomeHistory.push({ amount: bundle.price * 0.30, from: user._id });
+                  await twoLevel.save({ validateBeforeSave: false });
+                }
+              }
+  
+              await oneLevel.save({ validateBeforeSave: false });
+            }
+          }
+  
+          for (const course of bundle.courses) {
+            if (!user.courses.includes(course._id)) user.courses.push(course._id);
+            if (!course.students.includes(user._id)) {
+              course.students.push(user._id);
+              await course.save({ validateBeforeSave: false });
+            }
+          }
+  
+          await bundle.save({ validateBeforeSave: false });
+          console.log(`Bundle ${bundleIdToAssign} assigned.`);
         }
   
         // --- Assign Courses ---
@@ -235,6 +247,7 @@ const createPayment = asynchHandler(async (req, res) => {
       return res.status(statusCode).json(new ApiResponse(false, error.message || "Internal Server Error"));
     }
   });
+  
   
  
 export { createPayment,webHookHandler };
