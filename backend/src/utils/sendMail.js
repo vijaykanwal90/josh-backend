@@ -28,7 +28,8 @@ const sendMail =asynchHandler( async ({ from, to, subject, text }) => {
         return info;
     } catch (error) {
         console.error('Error sending email:', error);
-        throw new Error('Failed to send email');
+        return false;
+        // throw new Error('Failed to send email');
     }
 });
 

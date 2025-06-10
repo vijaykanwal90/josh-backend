@@ -409,8 +409,8 @@ const registerForWebinar = asynchHandler(async (req, res) => {
         if (!webinar) throw new ApiError(404, "Webinar not found");
         
         // Check if user already registered
-        const userExists = webinar.webinarUsers.some(user => user.email === email);
-        if (userExists) throw new ApiError(409, "User already registered for this webinar");
+        const userExists = webinar.webinarUsers.some(user => user.email.toLowerCase() === email.toLowerCase());
+        if (userExists) throw new ApiError(409, "User already registered for this webinar with this email");
         
         // Create user object
         const user = { name, email, mobile, registeredAt: new Date() };
@@ -421,7 +421,7 @@ const registerForWebinar = asynchHandler(async (req, res) => {
         
         try {
             // Send email
-            await sendMail({
+           const mailSent =  await sendMail({
                 from: process.env.MAIL,
                 to: email,
                 subject: `🎓 Thank You for Registering for the ${webinar.title}!`,
@@ -451,6 +451,9 @@ Team Joshguru
 "Learn Today, Lead Tomorrow"
 `
             });
+        if(!mailSent){
+            throw new ApiError(500, "Failed to send registration email");
+        }
         } catch (emailError) {
             console.error("Email sending failed:", emailError);
             // Don't fail the request, just log the error
