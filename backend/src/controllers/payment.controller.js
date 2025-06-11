@@ -161,44 +161,26 @@ const createPayment = asynchHandler(async (req, res) => {
           user.canRefer = true;
   
           // Assign lower-priced bundles and their courses
-          const lowerBundles = await Bundle.find({ price: { $lt: bundle.price } }).populate('courses');
-
-          for (const lower of lowerBundles) {
-            const userBundleIds = user.bundles.map(id => id.toString());
-            const userCourseIds = user.courses.map(id => id.toString());
-          
-            // Add bundle to user if not already present
-            if (!userBundleIds.includes(lower._id.toString())) {
-              user.bundles.push(lower._id);
-            }
-          
-            // Add user to bundle's student list if not present
-            const bundleStudentIds = lower.students.map(id => id.toString());
-            if (!bundleStudentIds.includes(user._id.toString())) {
-              lower.students.push(user._id);
-            }
-          
-            // Iterate over each course in this lower-priced bundle
-            for (const course of lower.courses) {
-              // Add course to user's course list if not already there
-              if (!userCourseIds.includes(course._id.toString())) {
-                user.courses.push(course._id);
-              }
-          
-              // Add user to course's students if not already there
-              const courseStudentIds = course.students.map(id => id.toString());
-              if (!courseStudentIds.includes(user._id.toString())) {
-                course.students.push(user._id);
-              }
-          
-              await course.save({ validateBeforeSave: false });
-            }
-          
-            await lower.save({ validateBeforeSave: false });
-          }
-          
-          // Don't forget to save user after all modifications
-          await user.save({ validateBeforeSave: false });
+             const lowerBundles = await Bundle.find({ price: { $lt: bundle.price } }).populate('courses');
+             for (const lower of lowerBundles) {
+               if (!user.bundles.includes(lower._id)) {
+                 user.bundles.push(lower._id);
+               }
+               if (!lower.students.includes(user._id)) {
+                 lower.students.push(user._id);
+               }
+   
+               for (const course of lower.courses) {
+                 if (!user.courses.includes(course._id)) user.courses.push(course._id);
+                 if (!course.students.includes(user._id)) {
+                   course.students.push(user._id);
+                   await course.save({ validateBeforeSave: false });
+                 }
+               }
+   
+               await lower.save({ validateBeforeSave: false });
+   
+             }
   
           // Referral logic
           if (user.referredByCode) {
