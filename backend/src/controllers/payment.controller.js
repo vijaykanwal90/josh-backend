@@ -171,11 +171,13 @@ const createPayment = asynchHandler(async (req, res) => {
             }
   
             for (const course of lower.courses) {
-              if (!user.courses.includes(course._id)) user.courses.push(course._id);
+              if (!user.courses.includes(course._id))
+                { user.courses.push(course._id);}
               if (!course.students.includes(user._id)) {
                 course.students.push(user._id);
-                await course.save({ validateBeforeSave: false });
               }
+                await course.save({ validateBeforeSave: false });
+              
             }
   
             await lower.save({ validateBeforeSave: false });
