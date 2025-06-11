@@ -2,12 +2,13 @@ import { asynchHandler } from "../utils/AsynchHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import Payment from "../models/payment.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import razorpayInstance from "../../utils/razorpay.js";
 import { Course } from "../models/course.model.js";
-import { Bundle } from "../models/bundle.model.js";
+import {Bundle} from "../models/bundle.model.js";
 import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils.js";
 import { User } from "../models/user.model.js"
 import { sendPurchaseConfirmationMail } from "../utils/coursePurchaseConfimationMail.js";
+import razorpayInstance from "../utils/razorpay.js";
+
 
 const createPayment = asynchHandler(async (req, res) => {
     const { id, name, phoneNo, email, route } = req.body;
