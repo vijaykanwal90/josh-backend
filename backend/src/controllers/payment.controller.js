@@ -10,7 +10,7 @@ import { User } from "../models/user.model.js";
 import { sendPurchaseConfirmationMail } from "../utils/coursePurchaseConfimationMail.js";
 
 const createPayment = asynchHandler(async (req, res) => {
-    const { id, name, phoneNo, email } = req.body;
+    const { id, name, phoneNo, email,route } = req.body;
   try {
     
       if (!Array.isArray(id) || id.length === 0) {
@@ -47,6 +47,7 @@ const createPayment = asynchHandler(async (req, res) => {
           name: name || "N/A",
           phoneNo: phoneNo || "N/A",
           email: email || "N/A",
+          route:route || "N/A"
         },
       };
     
@@ -133,7 +134,7 @@ const createPayment = asynchHandler(async (req, res) => {
       payment.userId = user._id;
       payment.status = paymentDetails.status;
       await payment.save();
-      if(payment.status !== 'captured' && user) {
+      if(payment.status !== 'captured' && user && payment.notes.route==="signup") {
         console.error(`Webhook Info: Payment status for Order ID ${orderId} is not captured. Status: ${payment.status} deleting user`);
         await User.findByIdAndDelete(user._id);
       }

@@ -13,6 +13,9 @@ import mongoose from "mongoose";
         },
         email:{
             type: String,
+        },
+        route:{
+            type:String
         }
     },
     orderId : {
