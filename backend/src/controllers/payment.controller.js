@@ -2,15 +2,14 @@ import { asynchHandler } from "../utils/AsynchHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import Payment from "../models/payment.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import razorpayInstance from "../utils/razorpay.js"
+import razorpayInstance from "../../utils/razorpay.js";
 import { Course } from "../models/course.model.js";
 import { Bundle } from "../models/bundle.model.js";
 import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils.js";
 import { User } from "../models/user.model.js";
-import { sendPurchaseConfirmationMail } from "../utils/coursePurchaseConfimationMail.js";
 
 const createPayment = asynchHandler(async (req, res) => {
-    const { id, name, phoneNo, email,route } = req.body;
+    const { id, name, phoneNo, email } = req.body;
   try {
     
       if (!Array.isArray(id) || id.length === 0) {
@@ -47,7 +46,6 @@ const createPayment = asynchHandler(async (req, res) => {
           name: name || "N/A",
           phoneNo: phoneNo || "N/A",
           email: email || "N/A",
-          route:route || "N/A"
         },
       };
     
@@ -118,7 +116,7 @@ const createPayment = asynchHandler(async (req, res) => {
         return res.status(200).json(new ApiResponse(200, null, "Acknowledged, but payment record not found."));
       }
   
-      if (payment.status === 'captured') {
+      if (payment.status === 'completed') {
         console.log(`Webhook Info: Order ID ${orderId} has already been processed.`);
         return res.status(200).json(new ApiResponse(200, null, "Order already completed."));
       }
@@ -133,21 +131,6 @@ const createPayment = asynchHandler(async (req, res) => {
   
       payment.userId = user._id;
       payment.status = paymentDetails.status;
-      
-      if (payment.status !== 'captured' && user && payment.notes.route === "signup") {
-        console.warn(`Webhook Warning: Payment for Order ID ${orderId} not captured. Scheduling deletion for user ${user.email}`);
-      
-        setTimeout(async () => {
-          const checkPayment = await Payment.findOne({ orderId });
-          if (checkPayment?.status !== 'captured') {
-            await User.findByIdAndDelete(user._id);
-            console.log(`User ${user.email} deleted after delay due to payment not captured.`);
-          }
-        }, 2 * 60 * 1000); // 5 minutes
-      }
-      
-
-
   
       try {
         // --- Assign Bundles ---
@@ -247,23 +230,14 @@ const createPayment = asynchHandler(async (req, res) => {
   
         await user.save({ validateBeforeSave: false });
         payment.status = 'completed';
-        await payment.save({ validateBeforeSave: false });
         console.log(`Order ID ${orderId} successfully fulfilled.`);
-        await sendPurchaseConfirmationMail({
-          user,
-          payment,
-          bundles: await Bundle.find({ _id: { $in: payment.bundleIds } }),
-          courses: await Course.find({ _id: { $in: payment.courseIds } })
-      });
-      
-      
   
       } catch (error) {
         payment.status = 'failed';
         console.error(`Webhook CRITICAL: Fulfillment failed for Order ID ${orderId}. Error: ${error.message}`);
       }
   
-  
+      await payment.save();
   
       return res.status(200).json(new ApiResponse(200, null, "Webhook processed successfully"));
   
