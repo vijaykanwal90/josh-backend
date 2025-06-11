@@ -132,6 +132,13 @@ const createPayment = asynchHandler(async (req, res) => {
   
       payment.userId = user._id;
       payment.status = paymentDetails.status;
+      await payment.save();
+      if(payment.status !== 'captured' && user) {
+        console.error(`Webhook Info: Payment status for Order ID ${orderId} is not captured. Status: ${payment.status} deleting user`);
+        await User.findByIdAndDelete(user._id);
+      }
+
+
   
       try {
         // --- Assign Bundles ---
@@ -245,7 +252,7 @@ const createPayment = asynchHandler(async (req, res) => {
         console.error(`Webhook CRITICAL: Fulfillment failed for Order ID ${orderId}. Error: ${error.message}`);
       }
   
-      await payment.save();
+      
   
       return res.status(200).json(new ApiResponse(200, null, "Webhook processed successfully"));
   
