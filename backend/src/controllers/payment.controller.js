@@ -133,7 +133,7 @@ const createPayment = asynchHandler(async (req, res) => {
   
       payment.userId = user._id;
       payment.status = paymentDetails.status;
-      await payment.save();
+      
       if(payment.status !== 'captured' && user && payment.notes.route==="signup") {
         console.error(`Webhook Info: Payment status for Order ID ${orderId} is not captured. Status: ${payment.status} deleting user`);
         await User.findByIdAndDelete(user._id);
@@ -239,6 +239,7 @@ const createPayment = asynchHandler(async (req, res) => {
   
         await user.save({ validateBeforeSave: false });
         payment.status = 'completed';
+        await payment.save({ validateBeforeSave: false });
         console.log(`Order ID ${orderId} successfully fulfilled.`);
         await sendPurchaseConfirmationMail({
           user,
@@ -247,13 +248,14 @@ const createPayment = asynchHandler(async (req, res) => {
           courses: await Course.find({ _id: { $in: payment.courseIds } })
       });
       
+      
   
       } catch (error) {
         payment.status = 'failed';
         console.error(`Webhook CRITICAL: Fulfillment failed for Order ID ${orderId}. Error: ${error.message}`);
       }
   
-      
+  
   
       return res.status(200).json(new ApiResponse(200, null, "Webhook processed successfully"));
   
