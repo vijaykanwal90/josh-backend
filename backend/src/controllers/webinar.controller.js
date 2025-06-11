@@ -4,8 +4,6 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { uploadCloudinary } from "../utils/Cloudinary.js";
 import sendMail from "../utils/sendMail.js";
-import twilio from 'twilio';
-const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 import { Parser } from 'json2csv';
 import mongoose from 'mongoose';
 
