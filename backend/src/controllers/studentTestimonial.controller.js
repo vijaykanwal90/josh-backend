@@ -32,7 +32,7 @@ export const createTestimonial = asynchHandler(async (req, res) => {
   
       if (imageFile) {
         try {
-          const result = await uploadCloudinary(imageFile.buffer);
+          const result = await uploadCloudinary(imageFile.path);
           cloudinaryImageUrl = result?.secure_url || null;
         } catch (err) {
           console.error("Cloudinary upload failed:", err);
@@ -116,7 +116,7 @@ export const updateTestimonial = asynchHandler(async (req, res) => {
 
     if (imageFile) {
       try {
-        const result = await uploadCloudinary(imageFile.buffer);
+        const result = await uploadCloudinary(imageFile.path);
         cloudinaryImageUrl = result?.secure_url || null;
         updatedFields.image = cloudinaryImageUrl;
       } catch (err) {

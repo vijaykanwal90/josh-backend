@@ -61,7 +61,8 @@ export const createTestimonial = asynchHandler(async (req, res) => {
     const file = files[fileType]?.[0];
     if (file) {
       try {
-        const result = await uploadCloudinary(file.buffer);
+        const result = await uploadCloudinary(file.path);
+        console.log(result)
         if (fileType === "thumbnail") {
           thumbnail = result?.secure_url;
         } else if (fileType === "representativeImage") {
@@ -152,7 +153,8 @@ export const updateTestimonial = asynchHandler(async (req, res) => {
     improvementMetric,
     quote,
     rating,
-    representative,
+    representative
+    
   };
 
   const files = req.files || {};
@@ -163,7 +165,7 @@ export const updateTestimonial = asynchHandler(async (req, res) => {
     const file = files[fileType]?.[0];
     if (file) {
       try {
-        const result = await uploadCloudinary(file.buffer);
+        const result = await uploadCloudinary(file.path);
         if (fileType === "thumbnail") {
           updatedFields.thumbnail = result?.secure_url;
         } else if (fileType === "representativeImage") {
