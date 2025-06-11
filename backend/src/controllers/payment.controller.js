@@ -6,8 +6,8 @@ import razorpayInstance from "../../utils/razorpay.js";
 import { Course } from "../models/course.model.js";
 import { Bundle } from "../models/bundle.model.js";
 import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils.js";
-import { User } from "../models/user.model.js";
-import router from "../routes/auth.router.js";
+import { User } from "../models/user.model.js"
+import { sendPurchaseConfirmationMail } from "../utils/coursePurchaseConfimationMail.js";
 
 const createPayment = asynchHandler(async (req, res) => {
     const { id, name, phoneNo, email, route } = req.body;
@@ -84,26 +84,19 @@ const createPayment = asynchHandler(async (req, res) => {
   });
 
 
-
   const webHookHandler = asynchHandler(async (req, res) => {
     try {
       // Step 1: Signature Validation
       const razorpaySignature = req.headers["x-razorpay-signature"];
       const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
   
-      if (!secret) {
-        throw new ApiError(500, "Webhook secret not configured");
-      }
+      if (!secret) throw new ApiError(500, "Webhook secret not configured");
   
       const isSignatureValid = validateWebhookSignature(req.rawBody, razorpaySignature, secret);
-      if (!isSignatureValid) {
-        throw new ApiError(400, "Invalid webhook signature");
-      }
+      if (!isSignatureValid) throw new ApiError(400, "Invalid webhook signature");
   
       const paymentDetails = req.body?.payload?.payment?.entity;
       const orderId = paymentDetails?.order_id;
-  
-      console.log("Webhook Info: Payment Details:", JSON.stringify(paymentDetails));
   
       if (!paymentDetails || !orderId) {
         console.error("Webhook Error: Invalid payment payload:", JSON.stringify(req.body));
@@ -111,59 +104,60 @@ const createPayment = asynchHandler(async (req, res) => {
       }
   
       const payment = await Payment.findOne({ orderId });
-      console.log(payment);
-  
       if (!payment) {
-        console.error(`Webhook Critical: Payment record not found for Order ID: ${orderId}. Manual check required.`);
+        console.error(`Payment not found for Order ID: ${orderId}`);
         return res.status(200).json(new ApiResponse(200, null, "Acknowledged, but payment record not found."));
       }
   
-      if (payment.status === 'completed') {
-        console.log(`Webhook Info: Order ID ${orderId} has already been processed.`);
+      // If payment already processed
+      if (payment.status === "completed") {
+        console.log(`Order ID ${orderId} has already been processed.`);
         return res.status(200).json(new ApiResponse(200, null, "Order already completed."));
       }
+  
+      // If payment failed (not captured)
+      if (paymentDetails.status !== "captured") {
+        payment.status = "failed";
+        await payment.save();
+        console.warn(`Payment not captured. Status: ${paymentDetails.status}. Skipping fulfillment.`);
+  
+        // Delete user if created during signup
+        if (payment.notes.route === "signup") {
+          const userToDelete = await User.findOne({ email: payment.notes.email });
+          if (userToDelete) {
+            await User.findByIdAndDelete(userToDelete._id);
+            console.warn(`User deleted due to failed payment on signup: ${userToDelete.email}`);
+          }
+        }
+  
+        return res.status(200).json(new ApiResponse(200, null, "Payment not captured. Ignoring."));
+      }
+  
       const user = await User.findOne({ email: payment.notes.email });
       if (!user) {
-        payment.status = 'failed';
+        payment.status = "failed";
         await payment.save();
-        console.error(`Webhook Critical: User not found for email: ${payment.notes.email}. Order: ${orderId}`);
+        console.error(`User not found for email: ${payment.notes.email}.`);
         return res.status(200).json(new ApiResponse(200, null, "Acknowledged, but user not found."));
       }
-    
+  
       payment.userId = user._id;
-      if(user && paymentDetails.status !== 'captured' && payment.notes.route==="signup") {
-        console.log("user created but payment is not captured");
-        await User.findOneAndDelete(user._id);
-      }  
   
       try {
         // --- Assign Bundles ---
-        for (const bundleIdToAssign of payment.bundleIds) {
-          console.log(`Assigning bundle ${bundleIdToAssign} to user ${user._id}`);
-          const bundle = await Bundle.findById(bundleIdToAssign).populate('courses');
-          if (!bundle) {
-            console.error(`Fulfillment Error: Bundle ${bundleIdToAssign} not found.`);
-            continue;
-          }
+        for (const bundleId of payment.bundleIds) {
+          const bundle = await Bundle.findById(bundleId).populate("courses");
+          if (!bundle) continue;
   
-          if (!user.bundles.includes(bundle._id)) {
-            user.bundles.push(bundle._id);
-          }
-          if (!bundle.students.includes(user._id)) {
-            bundle.students.push(user._id);
-          }
-  
+          if (!user.bundles.includes(bundle._id)) user.bundles.push(bundle._id);
+          if (!bundle.students.includes(user._id)) bundle.students.push(user._id);
           user.canRefer = true;
   
-          // Assign lower-priced bundles and their courses
-          const lowerBundles = await Bundle.find({ price: { $lt: bundle.price } }).populate('courses');
+          // Assign lower-priced bundles
+          const lowerBundles = await Bundle.find({ price: { $lt: bundle.price } }).populate("courses");
           for (const lower of lowerBundles) {
-            if (!user.bundles.includes(lower._id)) {
-              user.bundles.push(lower._id);
-            }
-            if (!lower.students.includes(user._id)) {
-              lower.students.push(user._id);
-            }
+            if (!user.bundles.includes(lower._id)) user.bundles.push(lower._id);
+            if (!lower.students.includes(user._id)) lower.students.push(user._id);
   
             for (const course of lower.courses) {
               if (!user.courses.includes(course._id)) user.courses.push(course._id);
@@ -209,48 +203,41 @@ const createPayment = asynchHandler(async (req, res) => {
           }
   
           await bundle.save({ validateBeforeSave: false });
-          console.log(`Bundle ${bundleIdToAssign} assigned.`);
         }
   
         // --- Assign Courses ---
         for (const courseId of payment.courseIds) {
-          console.log(`Assigning course ${courseId} to user ${user._id}`);
           const course = await Course.findById(courseId);
-          if (!course) {
-            console.error(`Fulfillment Error: Course ${courseId} not found.`);
-            continue;
-          }
+          if (!course) continue;
   
           if (!user.courses.includes(course._id)) {
             user.courses.push(course._id);
             course.students.push(user._id);
             if (course.isTrending) user.canRefer = true;
             await course.save({ validateBeforeSave: false });
-            console.log(`Course ${courseId} assigned.`);
-          } else {
-            console.log(`User already has course ${courseId}. Skipping.`);
           }
         }
   
         await user.save({ validateBeforeSave: false });
-        payment.status = 'completed';
-        console.log(`Order ID ${orderId} successfully fulfilled.`);
+        payment.status = "completed";
+        await payment.save();
+        sendPurchaseConfirmationMail(user, payment, payment.bundleIds, payment.courseIds);
   
-      } catch (error) {
-        payment.status = 'failed';
-        console.error(`Webhook CRITICAL: Fulfillment failed for Order ID ${orderId}. Error: ${error.message}`);
+        console.log(`Order ID ${orderId} fulfilled successfully.`);
+        return res.status(200).json(new ApiResponse(200, null, "Webhook processed successfully"));
+      } catch (fulfillmentError) {
+        payment.status = "failed";
+        await payment.save();
+        console.error(`Fulfillment error for Order ID ${orderId}:`, fulfillmentError.message);
+        return res.status(200).json(new ApiResponse(200, null, "Payment fulfillment failed."));
       }
-  
-        await payment.save()
-  
-      return res.status(200).json(new ApiResponse(200, null, "Webhook processed successfully"));
-  
     } catch (error) {
-      console.error("Webhook Error:", error);
+      console.error("Webhook Handler Error:", error);
       const statusCode = error instanceof ApiError ? error.statusCode : 500;
       return res.status(statusCode).json(new ApiResponse(false, error.message || "Internal Server Error"));
     }
   });
+  
   
   
  
