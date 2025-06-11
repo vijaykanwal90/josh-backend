@@ -253,11 +253,7 @@ const loginUser = asynchHandler(async (req, res) => {
             httpOnly: true,
             secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
         });
-        // const token = JsonWebTokenError.sign(
-        //     {userId: user._id},
-        //     process.env.JWT_SECRET,
-        //     { expiresIn: '24h' }   
-        // )
+        
 
         return res.status(200).json(new ApiResponse(200, { token,user }, "User logged in successfully"));
 
