@@ -118,7 +118,7 @@ const createPayment = asynchHandler(async (req, res) => {
         return res.status(200).json(new ApiResponse(200, null, "Acknowledged, but payment record not found."));
       }
   
-      if (payment.status === 'completed') {
+      if (payment.status === 'captured') {
         console.log(`Webhook Info: Order ID ${orderId} has already been processed.`);
         return res.status(200).json(new ApiResponse(200, null, "Order already completed."));
       }
@@ -134,10 +134,18 @@ const createPayment = asynchHandler(async (req, res) => {
       payment.userId = user._id;
       payment.status = paymentDetails.status;
       
-      if(payment.status !== 'captured' && user && payment.notes.route==="signup") {
-        console.error(`Webhook Info: Payment status for Order ID ${orderId} is not captured. Status: ${payment.status} deleting user`);
-        await User.findByIdAndDelete(user._id);
+      if (payment.status !== 'captured' && user && payment.notes.route === "signup") {
+        console.warn(`Webhook Warning: Payment for Order ID ${orderId} not captured. Scheduling deletion for user ${user.email}`);
+      
+        setTimeout(async () => {
+          const checkPayment = await Payment.findOne({ orderId });
+          if (checkPayment?.status !== 'captured') {
+            await User.findByIdAndDelete(user._id);
+            console.log(`User ${user.email} deleted after delay due to payment not captured.`);
+          }
+        }, 2 * 60 * 1000); // 5 minutes
       }
+      
 
 
   
