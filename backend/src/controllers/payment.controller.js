@@ -7,9 +7,10 @@ import { Course } from "../models/course.model.js";
 import { Bundle } from "../models/bundle.model.js";
 import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils.js";
 import { User } from "../models/user.model.js";
+import router from "../routes/auth.router.js";
 
 const createPayment = asynchHandler(async (req, res) => {
-    const { id, name, phoneNo, email } = req.body;
+    const { id, name, phoneNo, email, route } = req.body;
   try {
     
       if (!Array.isArray(id) || id.length === 0) {
@@ -46,6 +47,7 @@ const createPayment = asynchHandler(async (req, res) => {
           name: name || "N/A",
           phoneNo: phoneNo || "N/A",
           email: email || "N/A",
+          route:route || "N/A",
         },
       };
     
@@ -120,7 +122,6 @@ const createPayment = asynchHandler(async (req, res) => {
         console.log(`Webhook Info: Order ID ${orderId} has already been processed.`);
         return res.status(200).json(new ApiResponse(200, null, "Order already completed."));
       }
-  
       const user = await User.findOne({ email: payment.notes.email });
       if (!user) {
         payment.status = 'failed';
@@ -128,9 +129,12 @@ const createPayment = asynchHandler(async (req, res) => {
         console.error(`Webhook Critical: User not found for email: ${payment.notes.email}. Order: ${orderId}`);
         return res.status(200).json(new ApiResponse(200, null, "Acknowledged, but user not found."));
       }
-  
+    
       payment.userId = user._id;
-      payment.status = paymentDetails.status;
+      if(user && paymentDetails.status !== 'captured' && payment.notes.route==="signup") {
+        console.log("user created but payment is not captured");
+        await User.findOneAndDelete(user._id);
+      }  
   
       try {
         // --- Assign Bundles ---
@@ -237,7 +241,7 @@ const createPayment = asynchHandler(async (req, res) => {
         console.error(`Webhook CRITICAL: Fulfillment failed for Order ID ${orderId}. Error: ${error.message}`);
       }
   
-      await payment.save();
+        await payment.save()
   
       return res.status(200).json(new ApiResponse(200, null, "Webhook processed successfully"));
   
