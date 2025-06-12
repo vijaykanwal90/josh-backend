@@ -69,7 +69,7 @@ const createPayment = asynchHandler(async (req, res) => {
       });
     
       await newPayment.save();
-    
+     console.log(newPayment.bundleIds)
       return res.status(200).json(
         new ApiResponse(true, "Payment created successfully", razorpayOrder)
       );
@@ -140,7 +140,6 @@ const createPayment = asynchHandler(async (req, res) => {
         console.log("user created but payment is not captured");
         await User.findOneAndDelete(user._id);
       }  
-  
       try {
         // --- Assign Bundles ---
         for (const bundleIdToAssign of payment.bundleIds) {
