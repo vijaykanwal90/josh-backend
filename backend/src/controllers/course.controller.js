@@ -514,77 +514,7 @@ const deleteCourse = asynchHandler(async (req, res) => {
     throw new ApiError(500, "Internal server error");
   }
 });
-// const assignCourse = asynchHandler(async (req, res) => {
-//   const { courseId, studentId } = req.body;
 
-//   try {
-//     console.log(courseId);
-//     console.log(studentId);
-
-//     const course = await Course.findById(courseId);
-//     if (!course) {
-//       throw new ApiError(404, "Course not found");
-//     }
-
-//     // ✅ Update all videos to be previewable
-//     course.videos = course.videos.map((video) => ({
-//       ...video._doc,
-//       isPreview: true,
-//     }));
-
-//     // ✅ Avoid duplicate assignment
-//     if (course.students.includes(studentId)) {
-//       throw new ApiError(400, "User already assigned to course");
-//     }
-
-
-//     const user = await User.findById(studentId);
-//     if (!user) {
-//       throw new ApiError(404, "User not found");
-//     }
- 
-//     if (user.courses.includes(courseId)) {
-//       throw new ApiError(400, "Course already assigned to user");
-//     }
-//     if(course.isTrending){
-
-    
-//     const oneLevelUser = await User.findOne({
-//       sharableReferralCode: user.referredByCode,
-//     });
-//     if(oneLevelUser){
-//       oneLevelUser.total_income += course.price * 0.1;
-//       oneLevelUser.incomeHistory.push({
-//         amount: course.price * 0.1,
-//         date: Date.now(),
-//         from: user._id,
-//       });
-//       oneLevelUser.totalTeam += 1;
-//       oneLevelUser.myTeam.push(user._id);
-//       oneLevelUser.incentive += course.price * 0.1;
-//       await oneLevelUser.save();
-//     }
-//   }
-//     course.students.push(studentId);
-//     user.courses.push(courseId);
-
-//     await course.save();
-//     await user.save();
-
-//     return res
-//       .status(200)
-//       .json(
-//         new ApiResponse(
-//           200,
-//           { course, user },
-//           "Course assigned and all videos unlocked (as previews)"
-//         )
-//       );
-//   } catch (error) {
-//     console.log(error);
-//     throw new ApiError(500, "Internal server error", error);
-//   }
-// });
 const assignCourse = asynchHandler(async (req, res) => {
   const { courseId, studentId } = req.body;
 
@@ -643,8 +573,18 @@ const assignCourse = asynchHandler(async (req, res) => {
     );
   } catch (error) {
     console.error("Error assigning course:", error);
-    throw new ApiError(500, "Internal server error", error);
+  
+    const statusCode = error instanceof ApiError && error.statusCode ? error.statusCode : 500;
+    const message =
+      error instanceof ApiError && error.message
+        ? error.message
+        : "Internal Server Error";
+  
+    return res.status(statusCode).json(
+      new ApiResponse(statusCode, null, message)
+    );
   }
+  
 });
 
 export {

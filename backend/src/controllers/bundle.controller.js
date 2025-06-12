@@ -512,8 +512,17 @@ await updatedUser.save();
     );
 
   } catch (error) {
-    console.error("Assign Bundle Error:", error);
-    throw new ApiError(500, "Error while assigning bundle", error);
+    console.error("Error assigning bundle:", error);
+  
+    const statusCode = error instanceof ApiError && error.statusCode ? error.statusCode : 500;
+    const message =
+      error instanceof ApiError && error.message
+        ? error.message
+        : "Internal Server Error";
+  
+    return res.status(statusCode).json(
+      new ApiResponse(statusCode, null, message)
+    );
   }
 });
 

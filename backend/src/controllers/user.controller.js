@@ -6,13 +6,17 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 const getUser = asynchHandler(async (req, res) => {
     try {
         const user = await User.findById(req.user._id
-        ).populate("courses").populate("bundles")
+        ).populate("courses")
         .populate({
             path: 'incomeHistory',
             populate: {
                 path: 'from', // this is the field inside incomeHistory
                 select: 'name' // only get the name, not full user doc
             }
+        })
+        .populate({
+            path: 'bundles',
+            options: { sort: { price: 1 } } // Sort by price ascending
         })
         ;
         if (!user) {

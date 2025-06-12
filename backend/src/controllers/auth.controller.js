@@ -243,6 +243,10 @@ const loginUser = asynchHandler(async (req, res) => {
         const user = await User
             .findOne({ email })
             .select("+password")
+            .populate({
+                path: 'bundles',
+                options: { sort: { price: 1 } } // Sort by price ascending
+            })
             .exec();
 
         if (!user || !(await user.verifyPassword(password))) {
