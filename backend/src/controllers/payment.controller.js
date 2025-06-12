@@ -271,6 +271,32 @@ const createPayment = asynchHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(true, "Webhook processed successfully."));
   });
   
+  const deleteUnpaidUser = asynchHandler(async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        throw new ApiError(400, "Email is required to delete an unpaid user.");
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        // It's not an error if the user is already gone.
+        return res.status(200).json(new ApiResponse(200, null, "User not found, no action needed."));
+    }
+    
+    // Optional: You could add a check here to ensure the user truly has no paid courses
+    // if(user.courses.length === 0 && user.bundles.length === 0) { ... }
+
+    await User.findByIdAndDelete(user._id);
+
+    console.log(`Cleanup: Deleted user '${email}' who did not complete payment.`);
+
+    return res.status(200).json(new ApiResponse(200, null, "Unpaid user deleted successfully."));
+});
+
+
+  
   
  
-export { createPayment,webHookHandler };
+export { createPayment,webHookHandler,deleteUnpaidUser};
