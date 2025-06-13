@@ -427,7 +427,7 @@ const assignBundle = asynchHandler(async (req, res) => {
     });
 
     if (oneLevelUser) {
-      const bonus = bundle.price * 0.25;
+      const bonus = bundle.price * 0.30;
       oneLevelUser.total_income += bonus;
 
       if (!oneLevelUser.myTeam.includes(user._id)) {
@@ -447,7 +447,7 @@ const assignBundle = asynchHandler(async (req, res) => {
         : null;
 
       if (secondLevelUser) {
-        const bonus2 = bundle.price * 0.3;
+        const bonus2 = bundle.price * 0.25;
         secondLevelUser.total_income += bonus2;
 
         if (!secondLevelUser.myTeam.includes(user._id)) {
