@@ -619,7 +619,7 @@ const handleReferralIncentive = async (user, course) => {
     console.log("user does not exists")
    }
   if (oneLevelUser) {
-    const bonus = course.price * 0.01;
+    const bonus = course.price * 0.1;
     console.log(bonus)
     console.log("user exists")
 
