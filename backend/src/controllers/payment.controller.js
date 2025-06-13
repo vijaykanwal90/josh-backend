@@ -9,7 +9,7 @@ import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils.js"
 import { User } from "../models/user.model.js";
 
 const createPayment = asynchHandler(async (req, res) => {
-    const { id, name, phoneNo, email, route } = req.body;
+    const { id, name, phoneNo, email, route,highestPricedBundle } = req.body;
   try {
     
       if (!Array.isArray(id) || id.length === 0) {
@@ -39,7 +39,7 @@ const createPayment = asynchHandler(async (req, res) => {
       }
     
       const options = {
-        amount: totalExpectedAmount * 100, // ✅ calculate correctly and convert to paise
+        amount: (totalExpectedAmount * 100)-highestPricedBundle, // ✅ calculate correctly and convert to paise
         currency: "INR",
         receipt: `receipt_${Date.now()}`,
         notes: {
