@@ -39,7 +39,7 @@ const createPayment = asynchHandler(async (req, res) => {
       }
     
       const options = {
-        amount: (totalExpectedAmount-highestPricedBundle) * 100, // ✅ calculate correctly and convert to paise
+    amount:((totalExpectedAmount-highestPricedBundle)*100)||totalExpectedAmount, 
         currency: "INR",
         receipt: `receipt_${Date.now()}`,
         notes: {
