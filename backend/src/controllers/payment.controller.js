@@ -7,6 +7,7 @@ import { Course } from "../models/course.model.js";
 import { Bundle } from "../models/bundle.model.js";
 import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils.js";
 import { User } from "../models/user.model.js";
+import { sendPurchaseConfirmationMail } from "../utils/coursePurchaseConfimationMail.js";
 
 const createPayment = asynchHandler(async (req, res) => {
     const { id, name, phoneNo, email, route,highestPricedBundle } = req.body;
@@ -256,6 +257,14 @@ const createPayment = asynchHandler(async (req, res) => {
       payment.status = 'completed';
       payment.failureReason = ''; // Clear any previous failure reason
       await payment.save();
+      sendPurchaseConfirmationMail(
+        {
+          user,
+          payment,
+          bundles: await Bundle.find({ _id: { $in: payment.bundleIds } }),
+          courses: await Course.find({ _id: { $in: payment.courseIds } }),
+        }
+      )
   
       console.log(`SUCCESS: Order ID ${orderId} has been successfully fulfilled for user ${user.email}.`);
   
