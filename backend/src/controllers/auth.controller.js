@@ -137,8 +137,6 @@ Instagram: https://www.instagram.com/joshguru.in/?igsh=MXo5aWFkN3dmd3Yw#`
  });
         }
 
-
-
         return res.status(200).json(new ApiResponse(201, { user }, "User registered successfully"));
 
     } catch (error) {
