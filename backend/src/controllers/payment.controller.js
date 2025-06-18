@@ -219,13 +219,20 @@ const createPayment = asynchHandler(async (req, res) => {
           if (!user.courses.some(c => c.equals(course._id))) {
               user.courses.push(course._id);
               course.students.push(user._id);
-              if (course.isTrending) user.canRefer = true;
+             
+                if (course.isTrending) {
+                  user.canRefer = true;
+                  await handleReferralIncentive(user, course);
+                }
+              
               await course.save({ validateBeforeSave: false });
               console.log(`Course ${courseId} assigned successfully.`);
           }
       }
   
       // Referral Logic (Run this once after all items are assigned)
+      const bundle = await Bundle.findById(bundleId);
+
       if (user.referredByCode && (payment.bundleIds.length > 0 || payment.courseIds.length > 0)) {
           // Find the bundle with the highest price in the order to calculate commission
           const highestPricedItemAmount = payment.amount; // The total amount paid is a good proxy
@@ -235,7 +242,15 @@ const createPayment = asynchHandler(async (req, res) => {
             oneLevel.total_income += highestPricedItemAmount * 0.25;
             if (!oneLevel.myTeam.some(m => m.equals(user._id))) oneLevel.myTeam.push(user._id);
             oneLevel.totalTeam += 1;
-            oneLevel.incomeHistory.push({ amount: highestPricedItemAmount * 0.25, from: user._id });
+            // oneLevel.incomeHistory.push({ amount: highestPricedItemAmount * 0.25, from: user._id });
+            oneLevel.incomeHistory.push({ 
+              amount: highestPricedItemAmount * 0.25, 
+              from: user._id,
+              name: user.name,
+              courseName: bundle.bundleName,
+              isCourse: false,
+            });
+            
             await oneLevel.save({ validateBeforeSave: false });
   
             if (oneLevel.referredByCode) {
@@ -244,7 +259,11 @@ const createPayment = asynchHandler(async (req, res) => {
                 twoLevel.total_income += highestPricedItemAmount * 0.30;
                 if (!twoLevel.myTeam.some(m => m.equals(user._id))) twoLevel.myTeam.push(user._id);
                 twoLevel.totalTeam += 1;
-                twoLevel.incomeHistory.push({ amount: highestPricedItemAmount * 0.30, from: user._id });
+                twoLevel.incomeHistory.push({ amount: highestPricedItemAmount * 0.30, from: user._id,
+                  name: user.name,
+                  courseName: bundle.bundleName,
+                  isCourse: false,
+                 });
                 await twoLevel.save({ validateBeforeSave: false });
               }
             }
@@ -303,6 +322,40 @@ const createPayment = asynchHandler(async (req, res) => {
 
     return res.status(200).json(new ApiResponse(200, null, "Unpaid user deleted successfully."));
 });
+const handleReferralIncentive = async (user, course) => {
+  const oneLevelUser = await User.findOne({
+    sharableReferralCode: user.referredByCode,
+  });
+  // console.log("assign refereal amount")
+   if(!oneLevelUser){
+    console.log("user does not exists")
+   }
+  if (oneLevelUser) {
+    const bonus = course.price * 0.1;
+    console.log(bonus)
+    console.log("user exists")
+
+    oneLevelUser.total_income += bonus;
+    oneLevelUser.incentive += bonus;
+    if(!oneLevelUser.myTeam.includes(user._id)){
+    oneLevelUser.totalTeam += 1;
+    oneLevelUser.myTeam.push(user._id   );
+    }
+    console.log("checking incentive")
+    console.log(user.name)
+    oneLevelUser.incomeHistory.push({
+      amount: bonus,
+      date: Date.now(),
+      from: user._id,
+      name: user.name,
+      courseName: course.title,
+      isCourse: true,
+    });
+    
+
+    await oneLevelUser.save();
+  }
+};
 
 
   

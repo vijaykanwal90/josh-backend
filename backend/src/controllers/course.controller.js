@@ -622,7 +622,8 @@ const handleReferralIncentive = async (user, course) => {
     const bonus = course.price * 0.1;
     console.log(bonus)
     console.log("user exists")
-
+    console.log("checking incentive")
+    console.log(user.name)
     oneLevelUser.total_income += bonus;
     oneLevelUser.incentive += bonus;
     if(!oneLevelUser.myTeam.includes(user._id)){
@@ -633,6 +634,10 @@ const handleReferralIncentive = async (user, course) => {
       amount: bonus,
       date: Date.now(),
       from: user._id,
+      name: user.name,
+      
+      courseName: course.title,
+      isCourse: true,
     });
     
 

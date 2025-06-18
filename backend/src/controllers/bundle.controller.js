@@ -439,7 +439,12 @@ const assignBundle = asynchHandler(async (req, res) => {
         amount: bonus,
         date: Date.now(),
         from: user._id,
+        name: user.name,
+
+      courseName: bundle.bundleName,
+      isCourse: false,
       });
+
 
       // 2nd-level referral bonus
       const secondLevelUser = oneLevelUser.referredByCode
@@ -459,6 +464,10 @@ const assignBundle = asynchHandler(async (req, res) => {
           amount: bonus2,
           date: Date.now(),
           from: user._id,
+          name: user.name,
+
+          courseName: bundle.bundleName,
+          isCourse: false,
         });
 
         await secondLevelUser.save();
