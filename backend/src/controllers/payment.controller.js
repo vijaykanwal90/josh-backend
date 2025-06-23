@@ -12,6 +12,7 @@ import { sendPurchaseConfirmationMail } from "../utils/coursePurchaseConfimation
 const createPayment = asynchHandler(async (req, res) => {
     const { id, name, phoneNo, email, route,highestPricedBundle } = req.body;
   try {
+     console.log("In create api")
     
       if (!Array.isArray(id) || id.length === 0) {
         throw new ApiError(400, "At least one ID is required");
@@ -85,6 +86,7 @@ const createPayment = asynchHandler(async (req, res) => {
 
 
   const webHookHandler = asynchHandler(async (req, res) => {
+    console.log("in webhook")
     // Step 1: Signature Validation (Crucial for security)
     const razorpaySignature = req.headers["x-razorpay-signature"];
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
