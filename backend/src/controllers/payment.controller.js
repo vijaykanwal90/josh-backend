@@ -468,57 +468,94 @@ const webHookHandler = asynchHandler(async (req, res) => {
   }
 
   try {
+    console.log("payment successfull")
     payment.userId = user._id;
 
     for (const bundleId of payment.bundleIds) {
-      const bundle = await Bundle.findById(bundleId).populate('courses');
+      const bundle = await Bundle.findById(bundleId).populate("courses");
       if (!bundle) continue;
-
-      if (!user.bundles.some(b => b.equals(bundle._id))) user.bundles.push(bundle._id);
-      if (!bundle.students.some(s => s.equals(user._id))) bundle.students.push(user._id);
-
-      const lowerBundles = await Bundle.find({ price: { $lt: bundle.price } }).populate('courses');
+    
+      // Assign bundle to user
+      if (!user.bundles.some(b => b.equals(bundle._id))) {
+        user.bundles.push(bundle._id);
+      }
+      if (!bundle.students.some(s => s.equals(user._id))) {
+        bundle.students.push(user._id);
+      }
+    
+      // Assign lower-priced bundles and their courses
+      const lowerBundles = await Bundle.find({ price: { $lt: bundle.price } }).populate("courses");
+    
       for (const lower of lowerBundles) {
-        if (!user.bundles.some(b => b.equals(lower._id))) user.bundles.push(lower._id);
-        if (!lower.students.some(s => s.equals(user._id))) lower.students.push(user._id);
-
+        if (!user.bundles.some(b => b.equals(lower._id))) {
+          user.bundles.push(lower._id);
+        }
+        if (!lower.students.some(s => s.equals(user._id))) {
+          lower.students.push(user._id);
+        }
+    
         for (const course of lower.courses) {
           const fullCourse = await Course.findById(course._id);
-          if (!user.courses.some(c => c.equals(course._id))) user.courses.push(course._id);
+          if (!fullCourse) continue;
+    
+          if (!user.courses.some(c => c.equals(fullCourse._id))) {
+            user.courses.push(fullCourse._id);
+          }
           if (!fullCourse.students.some(s => s.equals(user._id))) {
             fullCourse.students.push(user._id);
             await fullCourse.save({ validateBeforeSave: false });
           }
         }
+    
         await lower.save({ validateBeforeSave: false });
       }
-
+    
+      // Assign courses from the purchased bundle
       for (const course of bundle.courses) {
         const fullCourse = await Course.findById(course._id);
-        if (!user.courses.some(c => c.equals(course._id))) user.courses.push(course._id);
+        if (!fullCourse) continue;
+    
+        if (!user.courses.some(c => c.equals(fullCourse._id))) {
+          user.courses.push(fullCourse._id);
+        }
         if (!fullCourse.students.some(s => s.equals(user._id))) {
           fullCourse.students.push(user._id);
           await fullCourse.save({ validateBeforeSave: false });
         }
       }
-
+    
       await bundle.save({ validateBeforeSave: false });
     }
+    
 
     for (const courseId of payment.courseIds) {
       const course = await Course.findById(courseId);
-      if (!course) continue;
-      if (!user.courses.some(c => c.equals(course._id))) user.courses.push(course._id);
+      if (!course) {
+        console.warn(`Course not found: ${courseId}`);
+        continue;
+      }
+    
+      // ✅ Add course to user's courses if not already present
+      if (!user.courses.some(c => c.equals(course._id))) {
+        user.courses.push(course._id);
+      }
+    
+      // ✅ Add user to course's students if not already present
       if (!course.students.some(s => s.equals(user._id))) {
         course.students.push(user._id);
         await course.save({ validateBeforeSave: false });
       }
-
+    
+      // ✅ Apply referral logic if trending
       if (course.isTrending) {
         user.canRefer = true;
         await handleReferralIncentive(user, course);
       }
     }
+    
+    // ✅ Don’t forget to save the user after processing all courses
+    await user.save({ validateBeforeSave: false });
+    
 
     const highestBundle = await Bundle.findOne({ _id: { $in: payment.bundleIds } }).sort({ price: -1 });
     if (user.referredByCode && (payment.bundleIds.length > 0 || payment.courseIds.length > 0)) {
@@ -578,6 +615,7 @@ const webHookHandler = asynchHandler(async (req, res) => {
 });
 
 const handleReferralIncentive = async (user, course) => {
+  console.log("for trending course handling referral incentive")
   const oneLevelUser = await User.findOne({ sharableReferralCode: user.referredByCode });
   if (!oneLevelUser) return;
 
