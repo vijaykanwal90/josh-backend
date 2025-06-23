@@ -482,7 +482,7 @@ const webHookHandler = asynchHandler(async (req, res) => {
       if (!bundle.students.some(s => s.equals(user._id))) {
         bundle.students.push(user._id);
       }
-    
+       user.canRefer = true; 
       // Assign lower-priced bundles and their courses
       const lowerBundles = await Bundle.find({ price: { $lt: bundle.price } }).populate("courses");
     
