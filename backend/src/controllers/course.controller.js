@@ -586,7 +586,32 @@ const assignCourse = asynchHandler(async (req, res) => {
   }
   
 });
+const checkCourseAccess = asynchHandler(async (req,res)=>{
+  const courseId = req.params.courseId;
+  const userId = req.user._id; // from JWT token
 
+  try {
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    // ✅ Check if user is enrolled
+    const isEnrolled = course.students.includes(userId);
+
+    if (!isEnrolled) {
+      return res.status(403).json({ message: "You are not enrolled in this course" });
+    }
+
+    // ✅ Return course data
+    res.status(200).json(course);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+
+})
 export {
   createCourse,
   getCourses,
@@ -598,6 +623,7 @@ export {
   getCourseByName,
   assignMentor,
   addVideos,
+  checkCourseAccess
 };
 function convertToEmbedUrl(url) {
   try {

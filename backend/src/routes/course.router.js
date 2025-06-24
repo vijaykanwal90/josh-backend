@@ -15,6 +15,7 @@ import {
   getCourseByName,
   addVideos,
   assignMentor,
+  checkCourseAccess
 } from "../controllers/course.controller.js";
 
 const router = Router();
@@ -37,7 +38,7 @@ router.route("/getCourses").get(getCourses);
 router.route("/addVideos/:courseId").patch(addVideos);
 
 router.route("/getCourseByName").get(userAuth, getCourseByName);
-
+router.route("/checkAccess/:courseId").get(userAuth,checkCourseAccess)
 router
   .route("/assignMentor")
   .patch(userAuth, checkRole(["admin"]), assignMentor);
