@@ -43,6 +43,7 @@ app.use(express.json({
       req.rawBody = buf.toString();
     }
   }));
+// added a commnet
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
 // In your Express backend
